@@ -5,6 +5,7 @@ import "rc-slider/assets/index.css";
 import Compare from "@/components/modals/Compare";
 import DemoModal from "@/components/modals/DemoModal";
 import Login from "@/components/modals/Login";
+import Register from "@/components/modals/Register";
 import MobileMenu from "@/components/modals/MobileMenu";
 import Quickview from "@/components/modals/Quickview";
 import SearchModal from "@/components/modals/SearchModal";
@@ -468,6 +469,7 @@ function App() {
         <CartComponent />
         <Compare />
         <Login />
+        <Register />
         <MobileMenu />
         <Quickview />
         <SearchModal />

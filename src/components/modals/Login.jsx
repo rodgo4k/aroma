@@ -1,7 +1,30 @@
 import { Link } from "react-router-dom";
-import React from "react";
+import React, { useState } from "react";
+import { login as apiLogin, setStoredToken } from "@/api/auth";
 
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const data = await apiLogin({ email: email.trim(), password });
+      setStoredToken(data.token);
+      document.querySelector("#login .icon-close-popup")?.click();
+      setEmail("");
+      setPassword("");
+    } catch (err) {
+      setError(err.message || "Erro ao fazer login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className="offcanvas offcanvas-end popup-style-1 popup-login"
@@ -17,17 +40,30 @@ export default function Login() {
           />
         </div>
         <div className="canvas-body popup-inner">
-          <form
-            action="account-page.html"
-            acceptCharset="utf-8"
-            className="form-login"
-          >
+          <form onSubmit={handleSubmit} acceptCharset="utf-8" className="form-login">
+            {error && (
+              <div className="alert alert-danger text-sm mb_12" role="alert">
+                {error}
+              </div>
+            )}
             <div>
               <fieldset className="email mb_12">
-                <input type="email" className="" placeholder="Email*" />
+                <input
+                  type="email"
+                  placeholder="Email*"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </fieldset>
               <fieldset className="password">
-                <input type="password" className="" placeholder="Password*" />
+                <input
+                  type="password"
+                  placeholder="Password*"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </fieldset>
             </div>
             <div className="bot">
@@ -42,8 +78,9 @@ export default function Login() {
                 <button
                   className="subscribe-button tf-btn animate-btn d-inline-flex bg-dark-2 w-100"
                   type="submit"
+                  disabled={loading}
                 >
-                  Sign in
+                  {loading ? "Entrando…" : "Sign in"}
                 </button>
                 <button
                   type="button"
