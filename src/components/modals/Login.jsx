@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { login as apiLogin, setStoredToken } from "@/api/auth";
+import { useContextElement } from "@/context/Context";
 
 export default function Login() {
+  const { setUser } = useContextElement();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,6 +17,7 @@ export default function Login() {
     try {
       const data = await apiLogin({ email: email.trim(), password });
       setStoredToken(data.token);
+      setUser(data.user);
       document.querySelector("#login .icon-close-popup")?.click();
       setEmail("");
       setPassword("");

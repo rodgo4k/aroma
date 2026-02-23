@@ -5,6 +5,8 @@ import HeaderSearch from "./HeaderSearch";
 import CartTotal from "../common/CartTotal";
 
 import Categories from "./Categories";
+import UserAccountTrigger from "../common/UserAccountTrigger";
+
 export default function Header11() {
   return (
     <header
@@ -40,16 +42,7 @@ export default function Header11() {
             </div>
             <div className="col-xl-4 col-md-4 col-3">
               <ul className="nav-icon d-flex justify-content-end align-items-center">
-                <li className="nav-account">
-                  <a
-                    href="#login"
-                    data-bs-toggle="offcanvas"
-                    className="nav-icon-item"
-                  >
-                    <i className="icon icon-user" />
-                    <span className="text d-none d-xl-block">Login</span>
-                  </a>
-                </li>
+                <UserAccountTrigger />
                 <li className="nav-wishlist">
                   <Link to={`/wish-list`} className="nav-icon-item">
                     <i className="icon icon-heart" />

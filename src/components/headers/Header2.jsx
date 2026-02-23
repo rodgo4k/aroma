@@ -3,6 +3,7 @@ import Nav2 from "./Nav2";
 import { Link } from "react-router-dom";
 import WishlistLength from "../common/WishlistLength";
 import CartLength from "../common/CartLength";
+import UserAccountTrigger from "../common/UserAccountTrigger";
 
 export default function Header2({
   parentClass = "header-default",
@@ -51,15 +52,7 @@ export default function Header2({
                   <i className="icon icon-search" />
                 </a>
               </li>
-              <li className="nav-account">
-                <a
-                  href="#login"
-                  data-bs-toggle="offcanvas"
-                  className="nav-icon-item"
-                >
-                  <i className="icon icon-user" />
-                </a>
-              </li>
+              <UserAccountTrigger />
               <li className="nav-wishlist">
                 <Link to={`/wish-list`} className="nav-icon-item">
                   <i className="icon icon-heart" />

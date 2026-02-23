@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import HeaderSearch2 from "./HeaderSearch2";
 import WishlistLength from "../common/WishlistLength";
 import CartTotal from "../common/CartTotal";
+import UserAccountTrigger from "../common/UserAccountTrigger";
 
 export default function Header14() {
   return (
@@ -84,21 +85,7 @@ export default function Header14() {
                     </span>
                   </Link>
                 </li>
-                <li className="nav-account">
-                  <a
-                    href="#login"
-                    data-bs-toggle="offcanvas"
-                    className="nav-icon-item"
-                  >
-                    <i className="icon icon-user" />
-                    <span className="text d-none d-xl-block">
-                      <span className="d-block text-main text-xs fw-normal">
-                        Account
-                      </span>
-                      <span className="text-sm">Log in</span>
-                    </span>
-                  </a>
-                </li>
+                <UserAccountTrigger />
                 <li className="nav-cart">
                   <a
                     href="#shoppingCart"
