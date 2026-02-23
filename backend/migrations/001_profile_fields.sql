@@ -1,0 +1,8 @@
+-- Adiciona campos de perfil: foto, data de nascimento, localização, telefone.
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS birth_date DATE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);

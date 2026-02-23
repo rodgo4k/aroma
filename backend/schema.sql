@@ -2,12 +2,18 @@
 -- Execute este SQL no painel do Neon (ou Vercel Postgres) para criar a tabela de usuários.
 
 CREATE TABLE IF NOT EXISTS users (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email      VARCHAR(255) NOT NULL UNIQUE,
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email        VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  name       VARCHAR(255),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  name         VARCHAR(255),
+  avatar_url   TEXT,
+  birth_date   DATE,
+  city         VARCHAR(255),
+  state        VARCHAR(255),
+  country      VARCHAR(255),
+  phone        VARCHAR(50),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Índice para login por email
