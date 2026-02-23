@@ -64,3 +64,35 @@ export async function getMe() {
   const data = await res.json().catch(() => ({}));
   return data?.user ?? null;
 }
+
+export async function updateProfile(profile) {
+  const token = getStoredToken();
+  if (!token) throw new Error("Não autenticado");
+  const res = await fetch(`${BASE}/api/me`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(profile),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Erro ao atualizar perfil");
+  return data.user;
+}
+
+export async function uploadAvatar(dataUrl) {
+  const token = getStoredToken();
+  if (!token) throw new Error("Não autenticado");
+  const res = await fetch(`${BASE}/api/upload-avatar`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ dataUrl }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Erro ao enviar foto");
+  return data.url;
+}

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { put } from "@vercel/blob";
 import { sql } from "./lib/db.js";
 import {
   hashPassword,
@@ -8,6 +9,9 @@ import {
   getBearerToken,
   verifyToken,
 } from "./lib/auth.js";
+
+const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,16 +94,122 @@ app.get("/api/me", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const rows = await sql`
-      SELECT id, email, name, created_at FROM users WHERE id = ${payload.userId}
+      SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+      FROM users WHERE id = ${payload.userId}
     `;
     if (rows.length === 0) return res.status(404).json({ error: "Usuário não encontrado" });
-    const user = rows[0];
+    const u = rows[0];
     return res.status(200).json({
-      user: { id: user.id, email: user.email, name: user.name, created_at: user.created_at },
+      user: {
+        id: u.id,
+        email: u.email,
+        name: u.name ?? null,
+        avatar_url: u.avatar_url ?? null,
+        birth_date: u.birth_date ?? null,
+        city: u.city ?? null,
+        state: u.state ?? null,
+        country: u.country ?? null,
+        phone: u.phone ?? null,
+        created_at: u.created_at,
+        updated_at: u.updated_at ?? u.created_at,
+      },
     });
   } catch (err) {
     console.error("Me error:", err);
     return res.status(500).json({ error: "Erro ao buscar usuário" });
+  }
+});
+
+app.patch("/api/me", async (req, res) => {
+  const token = getBearerToken(req);
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
+    return res.status(401).json({ error: "Token inválido ou expirado" });
+  }
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const [current] = await sql`
+      SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+      FROM users WHERE id = ${payload.userId}
+    `;
+    if (!current) return res.status(404).json({ error: "Usuário não encontrado" });
+    const body = req.body || {};
+    const name = typeof body.name === "string" ? body.name.trim() || null : current.name;
+    const avatar_url = body.avatar_url !== undefined ? (typeof body.avatar_url === "string" ? body.avatar_url.trim() || null : null) : current.avatar_url;
+    const birth_date = body.birth_date !== undefined ? (body.birth_date === "" || body.birth_date === null ? null : body.birth_date) : current.birth_date;
+    const city = body.city !== undefined ? (typeof body.city === "string" ? body.city.trim() || null : null) : current.city;
+    const state = body.state !== undefined ? (typeof body.state === "string" ? body.state.trim() || null : null) : current.state;
+    const country = body.country !== undefined ? (typeof body.country === "string" ? body.country.trim() || null : null) : current.country;
+    const phone = body.phone !== undefined ? (typeof body.phone === "string" ? body.phone.trim() || null : null) : current.phone;
+    const [updated] = await sql`
+      UPDATE users
+      SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
+          city = ${city}, state = ${state}, country = ${country}, phone = ${phone},
+          updated_at = now()
+      WHERE id = ${payload.userId}
+      RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+    `;
+    const u = updated;
+    return res.status(200).json({
+      user: {
+        id: u.id,
+        email: u.email,
+        name: u.name ?? null,
+        avatar_url: u.avatar_url ?? null,
+        birth_date: u.birth_date ?? null,
+        city: u.city ?? null,
+        state: u.state ?? null,
+        country: u.country ?? null,
+        phone: u.phone ?? null,
+        created_at: u.created_at,
+        updated_at: u.updated_at ?? u.created_at,
+      },
+    });
+  } catch (err) {
+    console.error("Me PATCH error:", err);
+    return res.status(500).json({ error: "Erro ao atualizar perfil" });
+  }
+});
+
+app.post("/api/upload-avatar", async (req, res) => {
+  const token = getBearerToken(req);
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
+    return res.status(401).json({ error: "Token inválido ou expirado" });
+  }
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    return res.status(503).json({ error: "Upload não configurado (BLOB_READ_WRITE_TOKEN)" });
+  }
+  try {
+    const dataUrl = req.body?.dataUrl || req.body?.image;
+    if (!dataUrl || typeof dataUrl !== "string") {
+      return res.status(400).json({ error: "Envie dataUrl com a imagem em base64" });
+    }
+    const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+      return res.status(400).json({ error: "Formato inválido. Use data:image/...;base64,..." });
+    }
+    const contentType = match[1].trim().toLowerCase();
+    if (!ALLOWED_AVATAR_TYPES.includes(contentType)) {
+      return res.status(400).json({ error: "Tipo de imagem não permitido. Use JPEG, PNG, WebP ou GIF." });
+    }
+    const base64 = match[2];
+    const buffer = Buffer.from(base64, "base64");
+    if (buffer.length > MAX_AVATAR_SIZE) {
+      return res.status(400).json({ error: "Imagem muito grande. Máximo 4 MB." });
+    }
+    const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
+    const pathname = `avatars/${payload.userId}-${Date.now()}.${ext}`;
+    const blob = await put(pathname, buffer, {
+      access: "public",
+      contentType,
+      addRandomSuffix: true,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+    return res.status(200).json({ url: blob.url });
+  } catch (err) {
+    console.error("Upload avatar error:", err);
+    return res.status(500).json({ error: "Erro ao fazer upload da foto" });
   }
 });
 
