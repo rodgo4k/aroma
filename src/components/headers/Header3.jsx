@@ -5,6 +5,7 @@ import LanguageSelect from "../common/LanguageSelect";
 import CurrencySelect from "../common/CurrencySelect";
 import WishlistLength from "../common/WishlistLength";
 import CartLength from "../common/CartLength";
+import UserAccountTrigger from "../common/UserAccountTrigger";
 
 export default function Header3() {
   return (
@@ -54,15 +55,7 @@ export default function Header3() {
                     <i className="icon icon-search" />
                   </a>
                 </li>
-                <li className="nav-account">
-                  <a
-                    href="#login"
-                    data-bs-toggle="offcanvas"
-                    className="nav-icon-item"
-                  >
-                    <i className="icon icon-user" />
-                  </a>
-                </li>
+                <UserAccountTrigger />
                 <li className="nav-wishlist">
                   <Link to={`/wish-list`} className="nav-icon-item">
                     <i className="icon icon-heart" />

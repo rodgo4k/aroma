@@ -53,3 +53,14 @@ export function setStoredToken(token) {
   if (token) localStorage.setItem("token", token);
   else localStorage.removeItem("token");
 }
+
+export async function getMe() {
+  const token = getStoredToken();
+  if (!token) return null;
+  const res = await fetch(`${BASE}/api/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => ({}));
+  return data?.user ?? null;
+}

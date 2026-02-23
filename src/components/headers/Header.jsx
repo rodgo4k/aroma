@@ -4,6 +4,7 @@ import Nav from "./Nav";
 import { Link } from "react-router-dom";
 import CartLength from "../common/CartLength";
 import WishlistLength from "../common/WishlistLength";
+import UserAccountTrigger from "../common/UserAccountTrigger";
 
 import { useLocation } from "react-router-dom";
 export default function Header1({
@@ -54,16 +55,7 @@ export default function Header1({
                   <i className="icon icon-search" />
                 </a>
               </li>
-              <li className="nav-account">
-                <a
-                  href="#login"
-                  data-bs-toggle="offcanvas"
-                  aria-controls="login"
-                  className="nav-icon-item"
-                >
-                  <i className="icon icon-user" />
-                </a>
-              </li>
+              <UserAccountTrigger />
               <li className="nav-wishlist">
                 <Link to={`/wish-list`} className="nav-icon-item">
                   <i className="icon icon-heart" />

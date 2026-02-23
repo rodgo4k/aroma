@@ -6,6 +6,7 @@ import Compare from "@/components/modals/Compare";
 import DemoModal from "@/components/modals/DemoModal";
 import Login from "@/components/modals/Login";
 import Register from "@/components/modals/Register";
+import UserMenu from "@/components/modals/UserMenu";
 import MobileMenu from "@/components/modals/MobileMenu";
 import Quickview from "@/components/modals/Quickview";
 import SearchModal from "@/components/modals/SearchModal";
@@ -470,6 +471,7 @@ function App() {
         <Compare />
         <Login />
         <Register />
+        <UserMenu />
         <MobileMenu />
         <Quickview />
         <SearchModal />

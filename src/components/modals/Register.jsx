@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { register as apiRegister, setStoredToken } from "@/api/auth";
+import { useContextElement } from "@/context/Context";
 
 export default function Register() {
+  const { setUser } = useContextElement();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,6 +19,7 @@ export default function Register() {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || undefined;
       const data = await apiRegister({ email: email.trim(), password, name });
       setStoredToken(data.token);
+      setUser(data.user);
       document.querySelector("#register .icon-close-popup")?.click();
       setFirstName("");
       setLastName("");
