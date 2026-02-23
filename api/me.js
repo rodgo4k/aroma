@@ -1,11 +1,23 @@
 import { sql } from "../lib/db.js";
 import { getBearerToken, verifyToken } from "../lib/auth.js";
 
-export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
+function toUser(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name ?? null,
+    avatar_url: row.avatar_url ?? null,
+    birth_date: row.birth_date ?? null,
+    city: row.city ?? null,
+    state: row.state ?? null,
+    country: row.country ?? null,
+    phone: row.phone ?? null,
+    created_at: row.created_at,
+    updated_at: row.updated_at ?? row.created_at,
+  };
+}
 
+export default async function handler(req, res) {
   const token = getBearerToken(req);
   const payload = verifyToken(token);
   if (!payload?.userId) {
@@ -16,28 +28,57 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "Banco de dados não configurado" });
   }
 
-  try {
-    const rows = await sql`
-      SELECT id, email, name, created_at
-      FROM users
-      WHERE id = ${payload.userId}
-    `;
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+  if (req.method === "GET") {
+    try {
+      const rows = await sql`
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+        FROM users
+        WHERE id = ${payload.userId}
+      `;
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+      return res.status(200).json({ user: toUser(rows[0]) });
+    } catch (err) {
+      console.error("Me GET error:", err);
+      return res.status(500).json({ error: "Erro ao buscar usuário" });
     }
-
-    const user = rows[0];
-    return res.status(200).json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        created_at: user.created_at,
-      },
-    });
-  } catch (err) {
-    console.error("Me error:", err);
-    return res.status(500).json({ error: "Erro ao buscar usuário" });
   }
+
+  if (req.method === "PATCH") {
+    try {
+      const [current] = await sql`
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+        FROM users WHERE id = ${payload.userId}
+      `;
+      if (!current) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      const body = req.body || {};
+      const name = typeof body.name === "string" ? body.name.trim() || null : current.name;
+      const avatar_url = body.avatar_url !== undefined ? (typeof body.avatar_url === "string" ? body.avatar_url.trim() || null : null) : current.avatar_url;
+      const birth_date = body.birth_date !== undefined ? (body.birth_date === "" || body.birth_date === null ? null : body.birth_date) : current.birth_date;
+      const city = body.city !== undefined ? (typeof body.city === "string" ? body.city.trim() || null : null) : current.city;
+      const state = body.state !== undefined ? (typeof body.state === "string" ? body.state.trim() || null : null) : current.state;
+      const country = body.country !== undefined ? (typeof body.country === "string" ? body.country.trim() || null : null) : current.country;
+      const phone = body.phone !== undefined ? (typeof body.phone === "string" ? body.phone.trim() || null : null) : current.phone;
+
+      const [updated] = await sql`
+        UPDATE users
+        SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
+            city = ${city}, state = ${state}, country = ${country}, phone = ${phone},
+            updated_at = now()
+        WHERE id = ${payload.userId}
+        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+      `;
+
+      return res.status(200).json({ user: toUser(updated) });
+    } catch (err) {
+      console.error("Me PATCH error:", err);
+      return res.status(500).json({ error: "Erro ao atualizar perfil" });
+    }
+  }
+
+  return res.status(405).json({ error: "Método não permitido" });
 }

@@ -21,6 +21,7 @@
 1. Acesse [neon.tech](https://neon.tech) e crie uma conta (pode ser com GitHub).
 2. Crie um projeto e anote a **connection string** (ex.: `postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require`).
 3. No painel do Neon, abra o **SQL Editor** e execute o conteúdo do arquivo **`backend/schema.sql`** (cria a tabela `users`).
+4. Se a tabela `users` já existia antes (sem perfil), execute também **`backend/migrations/001_profile_fields.sql`** para adicionar os campos de perfil (foto, data de nascimento, cidade, estado, país, telefone).
 
 ### 2. Variáveis de ambiente
 
@@ -30,7 +31,8 @@
 | `JWT_SECRET`   | Sim (prod)  | Chave secreta para assinar os tokens. Gere uma string longa e aleatória. Em dev pode omitir (usa valor padrão). |
 
 **Na Vercel:**  
-Projeto → **Settings** → **Environment Variables** → adicione `DATABASE_URL` e `JWT_SECRET` (Production, Preview, Development se quiser).
+Projeto → **Settings** → **Environment Variables** → adicione `DATABASE_URL` e `JWT_SECRET` (Production, Preview, Development se quiser).  
+Para **upload de foto de perfil**: crie um **Blob store** no projeto (Storage → Create Database → Blob). A variável `BLOB_READ_WRITE_TOKEN` é criada automaticamente; use-a nas env vars do projeto.
 
 **No Docker (dev):**  
 No `docker-compose.dev.yml` você pode adicionar um `env_file: .env` ou passar as variáveis em `environment` para o serviço `backend`. Crie um `.env` na raiz (e coloque no `.gitignore`) com:
@@ -50,7 +52,9 @@ Base: em produção na Vercel é a mesma origem do site (ex.: `https://seu-proje
 |--------|-----------------|------------------------|-----------|
 | POST   | `/api/register` | `{ "email", "password", "name?" }` | Cria conta. Senha mínimo 6 caracteres. Retorna `{ user, token }`. |
 | POST   | `/api/login`    | `{ "email", "password" }`          | Login. Retorna `{ user, token }`. |
-| GET    | `/api/me`       | —                      | Dados do usuário logado. Header: `Authorization: Bearer <token>`. |
+| GET    | `/api/me`       | —                      | Dados do usuário logado (inclui perfil: nome, avatar_url, birth_date, city, state, country, phone). Header: `Authorization: Bearer <token>`. |
+| PATCH  | `/api/me`       | `{ "name", "avatar_url", "birth_date", "city", "state", "country", "phone" }` | Atualiza perfil do usuário logado. Todos os campos são opcionais. |
+| POST   | `/api/upload-avatar` | `{ "dataUrl": "data:image/jpeg;base64,..." }` (JSON). Header: `Authorization: Bearer <token>`. | Envia foto para o Vercel Blob e devolve a URL. Máx. 4 MB; JPEG, PNG, WebP ou GIF. |
 
 **Respostas de erro comuns:**  
 `400` – dados inválidos; `401` – email/senha incorretos ou token inválido; `409` – email já em uso; `503` – `DATABASE_URL` não configurada.
