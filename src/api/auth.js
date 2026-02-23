@@ -1,13 +1,26 @@
 const BASE = import.meta.env.VITE_API_URL || "";
 
 export async function register({ email, password, name }) {
-  const res = await fetch(`${BASE}/api/register`, {
+  const url = `${BASE}/api/register`;
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password, name: name || undefined }),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Erro ao criar conta");
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json().catch(() => ({}))
+    : {};
+  if (!res.ok) {
+    const msg =
+      data.error ||
+      (res.status === 503
+        ? "Backend indisponível. Verifique DATABASE_URL e se o backend está rodando."
+        : res.status === 404 || res.status >= 500
+          ? "Servidor indisponível. Tente de novo ou confira a conexão com o backend."
+          : "Erro ao criar conta.");
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -17,8 +30,18 @@ export async function login({ email, password }) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Erro ao fazer login");
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json().catch(() => ({}))
+    : {};
+  if (!res.ok) {
+    const msg =
+      data.error ||
+      (res.status === 503
+        ? "Backend indisponível. Verifique DATABASE_URL e se o backend está rodando."
+        : "Erro ao fazer login.");
+    throw new Error(msg);
+  }
   return data;
 }
 
