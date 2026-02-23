@@ -2,6 +2,7 @@ import React from "react";
 import Nav from "./Nav";
 import { Link } from "react-router-dom";
 import HeaderSearch from "./HeaderSearch";
+import UserAccountTrigger from "../common/UserAccountTrigger";
 
 export default function Header4() {
   return (
@@ -35,16 +36,7 @@ export default function Header4() {
             </div>
             <div className="col-xl-4 col-md-4 col-3">
               <ul className="nav-icon d-flex justify-content-end align-items-center">
-                <li className="nav-account">
-                  <a
-                    href="#login"
-                    data-bs-toggle="offcanvas"
-                    className="nav-icon-item"
-                  >
-                    <i className="icon icon-user" />
-                    <span className="text d-none d-xl-block">Login</span>
-                  </a>
-                </li>
+                <UserAccountTrigger />
                 <li className="nav-wishlist">
                   <Link to={`/wish-list`} className="nav-icon-item">
                     <i className="icon icon-heart" />

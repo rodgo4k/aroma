@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import React from "react";
+import { useContextElement } from "@/context/Context";
 
 export default function Toolbar() {
+  const { user } = useContextElement();
+  const accountTarget = user ? "userMenu" : "login";
   return (
     <div className="tf-toolbar-bottom">
       <div className="toolbar-item">
@@ -36,7 +39,7 @@ export default function Toolbar() {
         </Link>
       </div>
       <div className="toolbar-item">
-        <a href="#login" data-bs-toggle="offcanvas">
+        <a href={`#${accountTarget}`} data-bs-toggle="offcanvas">
           <div className="toolbar-icon">
             <svg
               width={20}
@@ -53,7 +56,7 @@ export default function Toolbar() {
               />
             </svg>
           </div>
-          <div className="toolbar-label">Account</div>
+          <div className="toolbar-label">{user ? "Conta" : "Account"}</div>
         </a>
       </div>
       <div className="toolbar-item">

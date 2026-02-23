@@ -11,8 +11,12 @@ import {
 import { useLocation } from "react-router-dom";
 import LanguageSelect from "../common/LanguageSelect";
 import CurrencySelect from "../common/CurrencySelect";
+import { useContextElement } from "@/context/Context";
+
 export default function MobileMenu() {
   const { pathname } = useLocation();
+  const { user } = useContextElement();
+  const accountTarget = user ? "userMenu" : "login";
   const isMenuActive = (link) => {
     return link.href?.split("/")[1] == pathname.split("/")[1];
   };
@@ -255,12 +259,12 @@ export default function MobileMenu() {
                 Wishlist
               </Link>
               <a
-                href="#login"
+                href={`#${accountTarget}`}
                 data-bs-toggle="offcanvas"
                 className="site-nav-icon"
               >
                 <i className="icon icon-user" />
-                Login
+                {user ? "Minha conta" : "Login"}
               </a>
             </div>
             <div className="mb-notice">

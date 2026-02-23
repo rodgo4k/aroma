@@ -1,5 +1,7 @@
 import { allProducts } from "@/data/products";
 import { openCartModal } from "@/utlis/openCartModal";
+import { getMe } from "@/api/auth";
+import { setStoredToken } from "@/api/auth";
 // import { openWistlistModal } from "@/utlis/openWishlist";
 
 import React, { useEffect } from "react";
@@ -10,6 +12,7 @@ export const useContextElement = () => {
 };
 
 export default function Context({ children }) {
+  const [user, setUser] = useState(null);
   const [cartProducts, setCartProducts] = useState([]);
   const [wishList, setWishList] = useState([1, 2, 3]);
   const [compareItem, setCompareItem] = useState([1, 2, 3]);
@@ -111,7 +114,19 @@ export default function Context({ children }) {
     localStorage.setItem("wishlist", JSON.stringify(wishList));
   }, [wishList]);
 
+  useEffect(() => {
+    getMe().then(setUser);
+  }, []);
+
+  const logout = () => {
+    setStoredToken(null);
+    setUser(null);
+  };
+
   const contextElement = {
+    user,
+    setUser,
+    logout,
     cartProducts,
     setCartProducts,
     totalPrice,
