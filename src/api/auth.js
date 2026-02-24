@@ -65,6 +65,18 @@ export async function getMe() {
   return data?.user ?? null;
 }
 
+/** Verifica no servidor se o usuário atual é admin. Retorna true só se o backend confirmar. */
+export async function checkAdmin() {
+  const token = getStoredToken();
+  if (!token) return false;
+  const res = await fetch(`${BASE}/api/admin-check`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return false;
+  const data = await res.json().catch(() => ({}));
+  return data?.ok === true;
+}
+
 export async function updateProfile(profile) {
   const token = getStoredToken();
   if (!token) throw new Error("Não autenticado");

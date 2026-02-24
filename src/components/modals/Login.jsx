@@ -17,8 +17,12 @@ export default function Login() {
     try {
       const data = await apiLogin({ email: email.trim(), password });
       setStoredToken(data.token);
-      const fullUser = await getMe();
-      setUser(fullUser || data.user);
+      try {
+        const fullUser = await getMe();
+        setUser(fullUser);
+      } catch {
+        setUser(data.user);
+      }
       document.querySelector("#login .icon-close-popup")?.click();
       setEmail("");
       setPassword("");
