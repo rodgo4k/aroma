@@ -12,9 +12,12 @@ import {
 import Collections from "./Collections";
 import { recentBlogPosts } from "@/data/blogs";
 import { useLocation } from "react-router-dom";
+import { useContextElement } from "@/context/Context";
 
 export default function Nav() {
   const { pathname } = useLocation();
+  const { user } = useContextElement();
+  const isAdmin = user?.role === "admin";
   const isMenuActive = (link) => {
     return link.href?.split("/")[1] == pathname.split("/")[1];
   };
@@ -91,6 +94,16 @@ export default function Nav() {
           Contato
         </a>
       </li>
+      {isAdmin && (
+        <li className="menu-item">
+          <Link
+            to="/painel"
+            className={`item-link ${pathname === "/painel" ? "menuActive" : ""}`}
+          >
+            Painel de Controle
+          </Link>
+        </li>
+      )}
     </>
   );
 }

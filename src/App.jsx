@@ -58,6 +58,7 @@ import ProductPageStyle3 from "./pages/products/product-style-03";
 import NewsletterPopup3Page from "./pages/homes/newsletter-popup-03";
 import NewsletterPopup2Page from "./pages/homes/newsletter-popup-02";
 import AccountPage from "./pages/dashboard/account-page";
+import AdminPanelPage from "./pages/dashboard/admin-panel";
 import ProductDetailPage from "./pages/product-details/product-detail";
 import ProductDetailPageRightThumbnail from "./pages/product-details/product-right-thumbnail";
 import ProductDetailPageBottomThumbnail from "./pages/product-details/product-bottom-thumbnail";
@@ -315,6 +316,7 @@ function App() {
               element={<NewsletterPopup3Page />}
             />
             <Route path="account-page" element={<AccountPage />} />
+            <Route path="painel" element={<AdminPanelPage />} />
 
             <Route path="product-detail/:id" element={<ProductDetailPage />} />
             <Route

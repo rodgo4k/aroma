@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     }
 
     const rows = await sql`
-      SELECT id, email, name, password_hash
+      SELECT id, email, name, password_hash, role
       FROM users
       WHERE email = ${emailTrim}
     `;
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
     const token = signToken({ userId: user.id, email: user.email });
     return res.status(200).json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role ?? "user" },
       token,
     });
   } catch (err) {

@@ -19,8 +19,12 @@ export default function Register() {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || undefined;
       const data = await apiRegister({ email: email.trim(), password, name });
       setStoredToken(data.token);
-      const fullUser = await getMe();
-      setUser(fullUser || data.user);
+      try {
+        const fullUser = await getMe();
+        setUser(fullUser);
+      } catch {
+        setUser(data.user);
+      }
       document.querySelector("#register .icon-close-popup")?.click();
       setFirstName("");
       setLastName("");

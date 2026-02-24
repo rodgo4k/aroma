@@ -70,3 +70,27 @@ Base: em produção na Vercel é a mesma origem do site (ex.: `https://seu-proje
   e use o `GET /api/me` para obter os dados atuais do usuário (ou validar o token).
 
 Em produção (Vercel), use URLs relativas: `fetch('/api/login', { ... })`. Em dev (Docker), use `http://localhost:3001/api/login` ou uma variável `VITE_API_URL=http://localhost:3001`.
+
+---
+
+## Painel de controle (admin)
+
+A rota `/painel` e a página "Painel de Controle" são restritas a usuários com `role = 'admin'` no banco.
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/admin-check` | Header: `Authorization: Bearer <token>`. Confirma no **banco** se o usuário é admin. Retorna `200 { ok: true }` só para admins; `403` para demais. |
+
+**Camadas de proteção:**
+
+1. **Frontend (contexto):** se não houver usuário logado ou `user.role !== 'admin'`, a página redireciona para a home antes de mostrar qualquer conteúdo.
+2. **Frontend (servidor):** a página chama `GET /api/admin-check` antes de renderizar o painel. Só mostra o conteúdo após o backend confirmar (role lido do banco). Assim, alterar o estado no cliente (ex.: dev tools) não concede acesso.
+3. **Backend:** o endpoint `/api/admin-check` valida o JWT e consulta `users.role` no banco. O JWT **não** contém `role`; a permissão é sempre decidida no servidor a partir do banco.
+
+**Vetores de ataque considerados:**
+
+- **Alterar `user.role` no frontend:** o painel não renderiza até que `checkAdmin()` retorne sucesso; a API consulta o banco e retorna 403 para não admins.
+- **Acessar `/painel` diretamente:** as mesmas verificações (contexto + `admin-check`) aplicam; sem token válido de admin, redireciona.
+- **Forjar JWT com role:** o JWT só guarda `userId` e `email`; o backend nunca confia em role vindo do token, apenas no valor de `role` na tabela `users`.
+
+**Recomendação:** em qualquer novo endpoint que sirva dados sensíveis só para admin (ex.: listar usuários, alterar produtos), repetir a mesma lógica: validar token e checar `role` no banco antes de responder.

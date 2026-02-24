@@ -1,6 +1,3 @@
--- Banco: PostgreSQL (Neon ou Vercel Postgres)
--- Execute este SQL no painel do Neon (ou Vercel Postgres) para criar a tabela de usuários.
-
 CREATE TABLE IF NOT EXISTS users (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email        VARCHAR(255) NOT NULL UNIQUE,
@@ -12,14 +9,14 @@ CREATE TABLE IF NOT EXISTS users (
   state        VARCHAR(255),
   country      VARCHAR(255),
   phone        VARCHAR(50),
+  role         VARCHAR(20) NOT NULL DEFAULT 'user',
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Índice para login por email
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
--- Exemplo de tabela futura: lista de desejos (imagens = URL no campo, arquivo em storage)
+-- Exemplo de tabela : 
 -- CREATE TABLE IF NOT EXISTS wishlists (
 --   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 --   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

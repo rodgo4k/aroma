@@ -12,6 +12,7 @@ function toUser(row) {
     state: row.state ?? null,
     country: row.country ?? null,
     phone: row.phone ?? null,
+    role: row.role ?? "user",
     created_at: row.created_at,
     updated_at: row.updated_at ?? row.created_at,
   };
@@ -30,12 +31,30 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     try {
-      const rows = await sql`
-        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
-        FROM users
-        WHERE id = ${payload.userId}
-      `;
-      if (rows.length === 0) {
+      let rows;
+      try {
+        rows = await sql`
+          SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
+          FROM users
+          WHERE id = ${payload.userId}
+        `;
+      } catch (schemaErr) {
+        rows = await sql`
+          SELECT id, email, name, created_at, updated_at
+          FROM users
+          WHERE id = ${payload.userId}
+        `;
+        if (rows.length > 0) {
+          rows[0].avatar_url = null;
+          rows[0].birth_date = null;
+          rows[0].city = null;
+          rows[0].state = null;
+          rows[0].country = null;
+          rows[0].phone = null;
+          rows[0].role = "user";
+        }
+      }
+      if (!rows || rows.length === 0) {
         return res.status(404).json({ error: "Usuário não encontrado" });
       }
       return res.status(200).json({ user: toUser(rows[0]) });
@@ -48,7 +67,7 @@ export default async function handler(req, res) {
   if (req.method === "PATCH") {
     try {
       const [current] = await sql`
-        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
         FROM users WHERE id = ${payload.userId}
       `;
       if (!current) {
@@ -70,7 +89,7 @@ export default async function handler(req, res) {
             city = ${city}, state = ${state}, country = ${country}, phone = ${phone},
             updated_at = now()
         WHERE id = ${payload.userId}
-        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
       `;
 
       return res.status(200).json({ user: toUser(updated) });
