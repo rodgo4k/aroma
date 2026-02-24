@@ -66,7 +66,7 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ error: "Email e senha são obrigatórios" });
     }
     const rows = await sql`
-      SELECT id, email, name, password_hash FROM users WHERE email = ${emailTrim}
+      SELECT id, email, name, password_hash, role FROM users WHERE email = ${emailTrim}
     `;
     if (rows.length === 0) {
       return res.status(401).json({ error: "Email ou senha incorretos" });
@@ -76,7 +76,7 @@ app.post("/api/login", async (req, res) => {
     if (!valid) return res.status(401).json({ error: "Email ou senha incorretos" });
     const token = signToken({ userId: user.id, email: user.email });
     return res.status(200).json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role ?? "user" },
       token,
     });
   } catch (err) {
@@ -93,11 +93,28 @@ app.get("/api/me", async (req, res) => {
   }
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
-    const rows = await sql`
-      SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
-      FROM users WHERE id = ${payload.userId}
-    `;
-    if (rows.length === 0) return res.status(404).json({ error: "Usuário não encontrado" });
+    let rows;
+    try {
+      rows = await sql`
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
+        FROM users WHERE id = ${payload.userId}
+      `;
+    } catch (schemaErr) {
+      rows = await sql`
+        SELECT id, email, name, created_at, updated_at
+        FROM users WHERE id = ${payload.userId}
+      `;
+      if (rows.length > 0) {
+        rows[0].avatar_url = null;
+        rows[0].birth_date = null;
+        rows[0].city = null;
+        rows[0].state = null;
+        rows[0].country = null;
+        rows[0].phone = null;
+        rows[0].role = "user";
+      }
+    }
+    if (!rows || rows.length === 0) return res.status(404).json({ error: "Usuário não encontrado" });
     const u = rows[0];
     return res.status(200).json({
       user: {
@@ -110,13 +127,16 @@ app.get("/api/me", async (req, res) => {
         state: u.state ?? null,
         country: u.country ?? null,
         phone: u.phone ?? null,
+        role: u.role ?? "user",
         created_at: u.created_at,
         updated_at: u.updated_at ?? u.created_at,
       },
     });
   } catch (err) {
     console.error("Me error:", err);
-    return res.status(500).json({ error: "Erro ao buscar usuário" });
+    const message =
+      process.env.NODE_ENV !== "production" ? err.message : "Erro ao buscar usuário";
+    return res.status(500).json({ error: message });
   }
 });
 
@@ -129,7 +149,7 @@ app.patch("/api/me", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const [current] = await sql`
-      SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+      SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
       FROM users WHERE id = ${payload.userId}
     `;
     if (!current) return res.status(404).json({ error: "Usuário não encontrado" });
@@ -147,7 +167,7 @@ app.patch("/api/me", async (req, res) => {
           city = ${city}, state = ${state}, country = ${country}, phone = ${phone},
           updated_at = now()
       WHERE id = ${payload.userId}
-      RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, created_at, updated_at
+      RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
     `;
     const u = updated;
     return res.status(200).json({
@@ -161,6 +181,7 @@ app.patch("/api/me", async (req, res) => {
         state: u.state ?? null,
         country: u.country ?? null,
         phone: u.phone ?? null,
+        role: u.role ?? "user",
         created_at: u.created_at,
         updated_at: u.updated_at ?? u.created_at,
       },
@@ -168,6 +189,28 @@ app.patch("/api/me", async (req, res) => {
   } catch (err) {
     console.error("Me PATCH error:", err);
     return res.status(500).json({ error: "Erro ao atualizar perfil" });
+  }
+});
+
+app.get("/api/admin-check", async (req, res) => {
+  const token = getBearerToken(req);
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
+    return res.status(401).json({ error: "Token inválido ou expirado" });
+  }
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const rows = await sql`SELECT role FROM users WHERE id = ${payload.userId}`;
+    const user = rows?.[0];
+    if (!user) return res.status(403).json({ error: "Usuário não encontrado" });
+    const role = (user.role || "user").toString().toLowerCase();
+    if (role !== "admin") {
+      return res.status(403).json({ error: "Acesso negado. Apenas administradores." });
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("Admin check error:", err);
+    return res.status(500).json({ error: "Erro ao verificar permissão" });
   }
 });
 

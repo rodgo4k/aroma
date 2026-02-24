@@ -17,6 +17,7 @@ export default function MobileMenu() {
   const { pathname } = useLocation();
   const { user } = useContextElement();
   const accountTarget = user ? "userMenu" : "login";
+  const isAdmin = user?.role === "admin";
   const isMenuActive = (link) => {
     return link.href?.split("/")[1] == pathname.split("/")[1];
   };
@@ -242,6 +243,18 @@ export default function MobileMenu() {
                   </ul>
                 </div>
               </li>
+              {isAdmin && (
+                <li className="nav-mb-item">
+                  <Link
+                    to="/painel"
+                    className={`mb-menu-link ${
+                      pathname === "/painel" ? "menuActive" : ""
+                    }`}
+                  >
+                    Painel de Controle
+                  </Link>
+                </li>
+              )}
               <li className="nav-mb-item">
                 <a
                   href="https://themeforest.net/user/themesflat"
