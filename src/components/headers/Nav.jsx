@@ -80,9 +80,12 @@ export default function Nav() {
         </div>
                         </li>**/}
       <li className="menu-item">
-        <a href="https://themeforest.net/user/themesflat" className="item-link">
+        <Link
+          to="/catalogo"
+          className={`item-link ${pathname === "/catalogo" ? "menuActive" : ""}`}
+        >
           Catálogo
-        </a>
+        </Link>
       </li>
       <li className="menu-item">
         <a href="https://themeforest.net/user/themesflat" className="item-link">

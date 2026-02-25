@@ -124,3 +124,19 @@
     transform: translate3d(-148.0625px, 0, 0);
   }
 }
+
+/* Catálogo: mesma altura para todos os campos de filtro */
+.catalog-filters {
+  .form-control,
+  .form-select {
+    height: 38px !important;
+    min-height: 38px !important;
+    box-sizing: border-box;
+  }
+}
+
+// Botão lista de desejos no modal: coração preenchido vermelho quando ativo
+.wishlist-btn-active .icon {
+  color: var(--bs-danger) !important;
+  -webkit-text-fill-color: var(--bs-danger);
+}

@@ -22,6 +22,7 @@
 2. Crie um projeto e anote a **connection string** (ex.: `postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require`).
 3. No painel do Neon, abra o **SQL Editor** e execute o conteúdo do arquivo **`backend/schema.sql`** (cria a tabela `users`).
 4. Se a tabela `users` já existia antes (sem perfil), execute também **`backend/migrations/001_profile_fields.sql`** para adicionar os campos de perfil (foto, data de nascimento, cidade, estado, país, telefone).
+5. Para login com Google/Facebook, execute **`backend/migrations/003_oauth_null_password.sql`** (permite `password_hash` nulo para usuários OAuth).
 
 ### 2. Variáveis de ambiente
 
@@ -34,12 +35,33 @@
 Projeto → **Settings** → **Environment Variables** → adicione `DATABASE_URL` e `JWT_SECRET` (Production, Preview, Development se quiser).  
 Para **upload de foto de perfil**: crie um **Blob store** no projeto (Storage → Create Database → Blob). A variável `BLOB_READ_WRITE_TOKEN` é criada automaticamente; use-a nas env vars do projeto.
 
+**Login com Google e Facebook (OAuth):**  
+Para os botões "Google" e "Facebook" funcionarem, configure:
+
+| Variável | Obrigatória | Descrição |
+|----------|-------------|-----------|
+| `FRONTEND_URL` | Sim (OAuth) | URL do frontend para redirecionar após login (ex.: `https://seu-app.vercel.app` ou `http://localhost:5173`). |
+| `GOOGLE_CLIENT_ID` | Para Google | Obtido no [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (tipo "Aplicativo da Web"). |
+| `GOOGLE_CLIENT_SECRET` | Para Google | Mesmo lugar; nunca exponha no frontend. |
+| `FACEBOOK_APP_ID` | Para Facebook | Obtido no [Facebook for Developers](https://developers.facebook.com/) (produto Facebook Login). |
+| `FACEBOOK_APP_SECRET` | Para Facebook | Mesmo lugar; nunca exponha no frontend. |
+
+Nos provedores, cadastre as **URIs de redirecionamento** exatas:
+- **Google:** APIs e Serviços → Credenciais → seu cliente OAuth 2.0 → URIs de redirecionamento autorizados → adicione `https://seu-dominio.vercel.app/api/auth-google-callback` (e, para teste local, `http://localhost:3001/api/auth-google-callback`).
+- **Facebook:** Configurações do app → Facebook Login → Configurações → URIs de redirecionamento do OAuth válidos → adicione as mesmas URLs de callback.
+
 **No Docker (dev):**  
 No `docker-compose.dev.yml` você pode adicionar um `env_file: .env` ou passar as variáveis em `environment` para o serviço `backend`. Crie um `.env` na raiz (e coloque no `.gitignore`) com:
 
 ```env
 DATABASE_URL=postgresql://...
 JWT_SECRET=sua-chave-secreta
+FRONTEND_URL=http://localhost:5173
+# Opcional, para Google/Facebook:
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+FACEBOOK_APP_ID=...
+FACEBOOK_APP_SECRET=...
 ```
 
 ---
@@ -55,6 +77,10 @@ Base: em produção na Vercel é a mesma origem do site (ex.: `https://seu-proje
 | GET    | `/api/me`       | —                      | Dados do usuário logado (inclui perfil: nome, avatar_url, birth_date, city, state, country, phone). Header: `Authorization: Bearer <token>`. |
 | PATCH  | `/api/me`       | `{ "name", "avatar_url", "birth_date", "city", "state", "country", "phone" }` | Atualiza perfil do usuário logado. Todos os campos são opcionais. |
 | POST   | `/api/upload-avatar` | `{ "dataUrl": "data:image/jpeg;base64,..." }` (JSON). Header: `Authorization: Bearer <token>`. | Envia foto para o Vercel Blob e devolve a URL. Máx. 4 MB; JPEG, PNG, WebP ou GIF. |
+| GET    | `/api/auth-google`   | — | Redireciona para login do Google. Após autorização, o usuário volta em `/api/auth-google-callback` e é redirecionado ao front com `?token=...`. |
+| GET    | `/api/auth-google-callback` | — (query: `code`) | Callback do Google; não chamar diretamente. |
+| GET    | `/api/auth-facebook` | — | Redireciona para login do Facebook. Callback: `/api/auth-facebook-callback`. |
+| GET    | `/api/auth-facebook-callback` | — (query: `code`) | Callback do Facebook; não chamar diretamente. |
 
 **Respostas de erro comuns:**  
 `400` – dados inválidos; `401` – email/senha incorretos ou token inválido; `409` – email já em uso; `503` – `DATABASE_URL` não configurada.
