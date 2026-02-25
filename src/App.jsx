@@ -59,6 +59,7 @@ import NewsletterPopup3Page from "./pages/homes/newsletter-popup-03";
 import NewsletterPopup2Page from "./pages/homes/newsletter-popup-02";
 import AccountPage from "./pages/dashboard/account-page";
 import AdminPanelPage from "./pages/dashboard/admin-panel";
+import CatalogPage from "./pages/catalog";
 import ProductDetailPage from "./pages/product-details/product-detail";
 import ProductDetailPageRightThumbnail from "./pages/product-details/product-right-thumbnail";
 import ProductDetailPageBottomThumbnail from "./pages/product-details/product-bottom-thumbnail";
@@ -254,6 +255,7 @@ function App() {
             <Route path="home-furniture2" element={<HomePageFurniture2 />} />
             <Route path="home-skincare2" element={<HomePageSkincare2 />} />
 
+            <Route path="catalogo" element={<CatalogPage />} />
             <Route path="shop-default" element={<ProductPageDefault />} />
             <Route
               path="shop-left-sidebar"

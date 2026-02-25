@@ -1,7 +1,6 @@
 import { allProducts } from "@/data/products";
 import { openCartModal } from "@/utlis/openCartModal";
-import { getMe } from "@/api/auth";
-import { setStoredToken } from "@/api/auth";
+import { getMe, setStoredToken } from "@/api/auth";
 // import { openWistlistModal } from "@/utlis/openWishlist";
 
 import React, { useEffect } from "react";
@@ -116,6 +115,27 @@ export default function Context({ children }) {
 
   useEffect(() => {
     getMe().then(setUser);
+  }, []);
+
+  // Processa retorno do OAuth (Google/Facebook): ?token=... ou ?auth_error=...
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const authError = params.get("auth_error");
+    if (token) {
+      setStoredToken(token);
+      getMe()
+        .then((u) => setUser(u))
+        .catch(() => setUser(null));
+      const url = new URL(window.location.href);
+      url.searchParams.delete("token");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }
+    if (authError) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("auth_error");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }
   }, []);
 
   const logout = () => {
