@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
 import React, { useState } from "react";
-import { login as apiLogin, setStoredToken, getMe } from "@/api/auth";
+import { login as apiLogin, setStoredToken, getMe, getAuthGoogleUrl, getAuthFacebookUrl } from "@/api/auth";
 import { useContextElement } from "@/context/Context";
 
 export default function Login() {
@@ -102,8 +101,8 @@ export default function Login() {
             </div>
           </form>
           <div className="other-login">
-            <p className="text-sm text-center text-main-2">Or sign in with:</p>
-            <Link to={`/account-page`} className="w-100 text-md mb_8">
+            <p className="text-sm text-center text-main-2">Ou entre com:</p>
+            <a href={getAuthFacebookUrl()} className="w-100 text-md mb_8 d-flex align-items-center justify-content-center gap-2 text-decoration-none text-dark">
               <svg
                 className="icon"
                 width={32}
@@ -120,9 +119,9 @@ export default function Login() {
                   fill="white"
                 />
               </svg>
-              FACEBOOK
-            </Link>
-            <Link to={`/account-page`} className="w-100 text-md bg-dark">
+              Facebook
+            </a>
+            <a href={getAuthGoogleUrl()} className="w-100 text-md bg-dark d-flex align-items-center justify-content-center gap-2 text-decoration-none text-white">
               <svg
                 className="icon"
                 width={32}
@@ -163,8 +162,8 @@ export default function Login() {
                   </clipPath>
                 </defs>
               </svg>
-              GOOGLE
-            </Link>
+              Google
+            </a>
           </div>
         </div>
       </div>

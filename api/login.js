@@ -30,6 +30,9 @@ export default async function handler(req, res) {
     }
 
     const user = rows[0];
+    if (!user.password_hash) {
+      return res.status(401).json({ error: "Esta conta usa login com Google ou Facebook." });
+    }
     const valid = await verifyPassword(passwordStr, user.password_hash);
     if (!valid) {
       return res.status(401).json({ error: "Email ou senha incorretos" });

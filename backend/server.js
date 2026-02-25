@@ -23,6 +23,274 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Backend Aroma" });
 });
 
+// Proxy de imagens do Blob (evita 403 no browser quando o store é privado)
+const BLOB_HOST = "blob.vercel-storage.com";
+app.get("/api/perfume-image", async (req, res) => {
+  const rawUrl = typeof req.query.url === "string" ? req.query.url.trim() : "";
+  if (!rawUrl) return res.status(400).json({ error: "Parâmetro url obrigatório" });
+  let imageUrl;
+  try {
+    imageUrl = new URL(rawUrl);
+  } catch {
+    return res.status(400).json({ error: "URL inválida" });
+  }
+  if (!imageUrl.hostname.endsWith(BLOB_HOST) && !imageUrl.hostname.includes(BLOB_HOST)) {
+    return res.status(400).json({ error: "URL não permitida" });
+  }
+  const token = (process.env.BLOB_READ_WRITE_TOKEN || "").trim();
+  try {
+    const headers = {
+      Accept: "image/*",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const imageRes = await fetch(rawUrl, { headers });
+    if (!imageRes.ok) {
+      console.warn("Blob fetch failed:", imageRes.status, rawUrl.slice(0, 60));
+      return res.status(imageRes.status).sendStatus(imageRes.status);
+    }
+    const contentType = imageRes.headers.get("content-type") || "image/webp";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    const buffer = Buffer.from(await imageRes.arrayBuffer());
+    return res.send(buffer);
+  } catch (err) {
+    console.error("Perfume image proxy error:", err);
+    return res.status(502).json({ error: "Erro ao carregar imagem" });
+  }
+});
+
+// Normaliza UUID para chave de mapa (evita falha quando driver retorna formato diferente)
+function toUuidKey(val) {
+  if (val == null) return "";
+  const s = String(val).trim().toLowerCase();
+  return s.length > 10 ? s : "";
+}
+
+// Catálogo de perfumes (do banco) — imagens vêm da tabela perfume_images (perfume_id → url)
+app.get("/api/perfumes", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const catalog = typeof req.query.catalog === "string" ? req.query.catalog.trim() : null;
+    let rows;
+    if (catalog && ["arabe", "feminino", "normal"].includes(catalog)) {
+      rows = await sql`
+        SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
+        FROM perfumes p
+        WHERE p.catalog_source = ${catalog}
+        ORDER BY p.title
+      `;
+    } else {
+      rows = await sql`
+        SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
+        FROM perfumes
+        ORDER BY catalog_source, title
+      `;
+    }
+    const idSet = new Set(rows.map((r) => toUuidKey(r.id)).filter(Boolean));
+    const allImages = await sql`SELECT perfume_id, url, position FROM perfume_images ORDER BY perfume_id, position`;
+    const imagesRows = idSet.size
+      ? allImages.filter((r) => idSet.has(toUuidKey(r.perfume_id ?? r.perfumeId)))
+      : [];
+    const imagesByPerfume = new Map();
+    for (const img of imagesRows) {
+      const pid = toUuidKey(img.perfume_id ?? img.perfumeId);
+      if (!pid) continue;
+      const url = typeof (img.url ?? img.URL) === "string" ? (img.url ?? img.URL).trim() : "";
+      if (!url) continue;
+      const list = imagesByPerfume.get(pid) || [];
+      const pos = Number(img.position ?? img.Position ?? list.length);
+      list.push({ url, position: pos });
+      imagesByPerfume.set(pid, list);
+    }
+    for (const [pid, arr] of imagesByPerfume) {
+      arr.sort((a, b) => a.position - b.position);
+      imagesByPerfume.set(pid, arr.map((x) => x.url));
+    }
+    const list = rows.map((p) => {
+      const perfumeId = toUuidKey(p.id);
+      let images = imagesByPerfume.get(perfumeId) ?? [];
+      if (images.length === 0) {
+        const vars = p.variants ?? [];
+        const firstWithImg = vars.find((v) => v && (v.image_url || v.imageUrl));
+        const url = firstWithImg && (firstWithImg.image_url ?? firstWithImg.imageUrl);
+        if (url) images = [String(url).startsWith("//") ? "https:" + url : url];
+      }
+      if (images.length === 0 && p.image_2_url) {
+        const u = String(p.image_2_url).trim();
+        if (u) images = [u.startsWith("//") ? "https:" + u : u];
+      }
+      return {
+        id: p.id,
+        url: p.external_url,
+        title: p.title,
+        description: p.description ?? "",
+        catalogSource: p.catalog_source,
+        notes: p.notes ?? {},
+        variants: p.variants ?? [],
+        images,
+      };
+    });
+    return res.status(200).json(list);
+  } catch (err) {
+    console.error("GET /api/perfumes error:", err);
+    return res.status(500).json({ error: "Erro ao listar perfumes" });
+  }
+});
+
+app.get("/api/perfumes/:id", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const id = req.params.id;
+    const [p] = await sql`
+      SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
+      FROM perfumes WHERE id = ${id}
+    `;
+    if (!p) return res.status(404).json({ error: "Perfume não encontrado" });
+    const imgRows = await sql`
+      SELECT url, position FROM perfume_images WHERE perfume_id = ${id} ORDER BY position
+    `;
+    let images = (imgRows || []).map((i) => (i.url != null ? String(i.url).trim() : "")).filter(Boolean);
+    if (images.length === 0) {
+      const vars = p.variants ?? [];
+      const firstWithImg = vars.find((v) => v && (v.image_url || v.imageUrl));
+      const url = firstWithImg && (firstWithImg.image_url ?? firstWithImg.imageUrl);
+      if (url) images = [String(url).startsWith("//") ? "https:" + url : url];
+    }
+    if (images.length === 0 && p.image_2_url) {
+      const u = String(p.image_2_url).trim();
+      if (u) images = [u.startsWith("//") ? "https:" + u : u];
+    }
+    return res.status(200).json({
+      id: p.id,
+      url: p.external_url,
+      title: p.title,
+      description: p.description ?? "",
+      catalogSource: p.catalog_source,
+      notes: p.notes ?? {},
+      variants: p.variants ?? [],
+      images,
+    });
+  } catch (err) {
+    console.error("GET /api/perfumes/:id error:", err);
+    return res.status(500).json({ error: "Erro ao buscar perfume" });
+  }
+});
+
+function oauthCallbackBase(req) {
+  const proto = req.get("x-forwarded-proto") || req.protocol || "http";
+  const host = req.get("x-forwarded-host") || req.get("host") || "";
+  return host ? `${proto}://${host}` : process.env.OAUTH_CALLBACK_BASE || "";
+}
+
+app.get("/api/auth-google", (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const base = oauthCallbackBase(req);
+  if (!clientId || !base) {
+    return res.status(503).json({ error: "Login com Google não configurado." });
+  }
+  const redirectUri = `${base}/api/auth-google-callback`;
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "email profile");
+  res.redirect(302, url.toString());
+});
+
+app.get("/api/auth-google-callback", async (req, res) => {
+  const code = typeof req.query?.code === "string" ? req.query.code.trim() : "";
+  const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+  if (!code) return res.redirect(302, `${frontendUrl}?auth_error=missing_code`);
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const base = oauthCallbackBase(req);
+  const redirectUri = `${base}/api/auth-google-callback`;
+  if (!clientId || !clientSecret || !sql) return res.redirect(302, `${frontendUrl}?auth_error=config`);
+  try {
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }),
+    });
+    const tokenData = await tokenRes.json().catch(() => ({}));
+    const accessToken = tokenData.access_token;
+    if (!accessToken) return res.redirect(302, `${frontendUrl}?auth_error=token`);
+    const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", { headers: { Authorization: `Bearer ${accessToken}` } });
+    const profile = await userRes.json().catch(() => ({}));
+    const email = (profile.email || "").trim().toLowerCase();
+    const name = (profile.name || "").trim() || null;
+    if (!email) return res.redirect(302, `${frontendUrl}?auth_error=no_email`);
+    let rows = await sql`SELECT id, email, name, role FROM users WHERE email = ${email}`;
+    let user = rows[0];
+    if (!user) {
+      const [inserted] = await sql`INSERT INTO users (email, password_hash, name) VALUES (${email}, NULL, ${name}) RETURNING id, email, name, role`;
+      user = inserted;
+    }
+    const token = signToken({ userId: user.id, email: user.email });
+    res.redirect(302, `${frontendUrl}${frontendUrl.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`);
+  } catch (err) {
+    console.error("Google callback error:", err);
+    res.redirect(302, `${frontendUrl}?auth_error=server`);
+  }
+});
+
+app.get("/api/auth-facebook", (req, res) => {
+  const appId = process.env.FACEBOOK_APP_ID;
+  const base = oauthCallbackBase(req);
+  if (!appId || !base) {
+    return res.status(503).json({ error: "Login com Facebook não configurado." });
+  }
+  const redirectUri = `${base}/api/auth-facebook-callback`;
+  const url = new URL("https://www.facebook.com/v21.0/dialog/oauth");
+  url.searchParams.set("client_id", appId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("scope", "email,public_profile");
+  url.searchParams.set("response_type", "code");
+  res.redirect(302, url.toString());
+});
+
+app.get("/api/auth-facebook-callback", async (req, res) => {
+  const code = typeof req.query?.code === "string" ? req.query.code.trim() : "";
+  const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+  if (!code) return res.redirect(302, `${frontendUrl}?auth_error=missing_code`);
+  const appId = process.env.FACEBOOK_APP_ID;
+  const appSecret = process.env.FACEBOOK_APP_SECRET;
+  const base = oauthCallbackBase(req);
+  const redirectUri = `${base}/api/auth-facebook-callback`;
+  if (!appId || !appSecret || !sql) return res.redirect(302, `${frontendUrl}?auth_error=config`);
+  try {
+    const tokenUrl = new URL("https://graph.facebook.com/v21.0/oauth/access_token");
+    tokenUrl.searchParams.set("client_id", appId);
+    tokenUrl.searchParams.set("client_secret", appSecret);
+    tokenUrl.searchParams.set("redirect_uri", redirectUri);
+    tokenUrl.searchParams.set("code", code);
+    const tokenRes = await fetch(tokenUrl.toString());
+    const tokenData = await tokenRes.json().catch(() => ({}));
+    const accessToken = tokenData.access_token;
+    if (!accessToken) return res.redirect(302, `${frontendUrl}?auth_error=token`);
+    const userUrl = new URL("https://graph.facebook.com/me");
+    userUrl.searchParams.set("fields", "id,email,name");
+    userUrl.searchParams.set("access_token", accessToken);
+    const userRes = await fetch(userUrl.toString());
+    const profile = await userRes.json().catch(() => ({}));
+    const email = (profile.email || "").trim().toLowerCase();
+    const name = (profile.name || "").trim() || null;
+    if (!email) return res.redirect(302, `${frontendUrl}?auth_error=no_email`);
+    let rows = await sql`SELECT id, email, name, role FROM users WHERE email = ${email}`;
+    let user = rows[0];
+    if (!user) {
+      const [inserted] = await sql`INSERT INTO users (email, password_hash, name) VALUES (${email}, NULL, ${name}) RETURNING id, email, name, role`;
+      user = inserted;
+    }
+    const token = signToken({ userId: user.id, email: user.email });
+    res.redirect(302, `${frontendUrl}${frontendUrl.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`);
+  } catch (err) {
+    console.error("Facebook callback error:", err);
+    res.redirect(302, `${frontendUrl}?auth_error=server`);
+  }
+});
+
 app.post("/api/register", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
@@ -72,6 +340,9 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Email ou senha incorretos" });
     }
     const user = rows[0];
+    if (!user.password_hash) {
+      return res.status(401).json({ error: "Esta conta usa login com Google ou Facebook." });
+    }
     const valid = await verifyPassword(passwordStr, user.password_hash);
     if (!valid) return res.status(401).json({ error: "Email ou senha incorretos" });
     const token = signToken({ userId: user.id, email: user.email });

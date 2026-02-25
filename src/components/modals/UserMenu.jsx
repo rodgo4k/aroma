@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 import { updateProfile, uploadAvatar } from "@/api/auth";
 
@@ -176,9 +177,16 @@ export default function UserMenu() {
                 )}
               </div>
               <div className="button-wrap">
+                <Link
+                  to="/account-page"
+                  className="subscribe-button tf-btn animate-btn bg-dark-2 w-100 mb_8 d-block text-center text-decoration-none"
+                  onClick={() => document.querySelector("#userMenu .icon-close-popup")?.click()}
+                >
+                  Minha conta
+                </Link>
                 <button
                   type="button"
-                  className="subscribe-button tf-btn animate-btn bg-dark-2 w-100 mb_8"
+                  className="tf-btn btn-out-line-dark2 w-100 mb_8"
                   onClick={() => setEditing(true)}
                 >
                   Editar perfil

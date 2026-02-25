@@ -47,7 +47,7 @@ export default function Hero() {
                         </div>
                         <div className="box-btn-slider fade-item fade-item-3">
                           <Link
-                            to={`/shop-default`}
+                            to="/catalogo"
                             className="tf-btn btn-white animate-btn"
                           >
                             Catálogo

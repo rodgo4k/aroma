@@ -1,5 +1,15 @@
 const BASE = import.meta.env.VITE_API_URL || "";
 
+/** URL para iniciar login com Google (redireciona para o backend). */
+export function getAuthGoogleUrl() {
+  return BASE ? `${BASE}/api/auth-google` : "/api/auth-google";
+}
+
+/** URL para iniciar login com Facebook (redireciona para o backend). */
+export function getAuthFacebookUrl() {
+  return BASE ? `${BASE}/api/auth-facebook` : "/api/auth-facebook";
+}
+
 export async function register({ email, password, name }) {
   const url = `${BASE}/api/register`;
   const res = await fetch(url, {
