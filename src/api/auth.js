@@ -1,17 +1,26 @@
 const BASE = import.meta.env.VITE_API_URL || "";
 
+/** Em produção (mesma origem), usa a URL atual para a API. Evita chamar outro backend por engano. */
+function getBase() {
+  if (BASE) return BASE.replace(/\/$/, "");
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+  return "";
+}
+
 /** URL para iniciar login com Google (redireciona para o backend). */
 export function getAuthGoogleUrl() {
-  return BASE ? `${BASE}/api/auth-google` : "/api/auth-google";
+  const b = getBase();
+  return b ? `${b}/api/auth-google` : "/api/auth-google";
 }
 
 /** URL para iniciar login com Facebook (redireciona para o backend). */
 export function getAuthFacebookUrl() {
-  return BASE ? `${BASE}/api/auth-facebook` : "/api/auth-facebook";
+  const b = getBase();
+  return b ? `${b}/api/auth-facebook` : "/api/auth-facebook";
 }
 
 export async function register({ phone, password, name, email, country }) {
-  const url = `${BASE}/api/register`;
+  const url = `${getBase()}/api/register`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -41,7 +50,7 @@ export async function register({ phone, password, name, email, country }) {
 }
 
 export async function login({ phone, password, country }) {
-  const res = await fetch(`${BASE}/api/login`, {
+  const res = await fetch(`${getBase()}/api/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -77,7 +86,7 @@ export function setStoredToken(token) {
 export async function getMe() {
   const token = getStoredToken();
   if (!token) return null;
-  const res = await fetch(`${BASE}/api/me`, {
+  const res = await fetch(`${getBase()}/api/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return null;
@@ -89,7 +98,7 @@ export async function getMe() {
 export async function checkAdmin() {
   const token = getStoredToken();
   if (!token) return false;
-  const res = await fetch(`${BASE}/api/admin-check`, {
+  const res = await fetch(`${getBase()}/api/admin-check`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return false;
@@ -100,7 +109,7 @@ export async function checkAdmin() {
 export async function updateProfile(profile) {
   const token = getStoredToken();
   if (!token) throw new Error("Não autenticado");
-  const res = await fetch(`${BASE}/api/me`, {
+  const res = await fetch(`${getBase()}/api/me`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -116,7 +125,7 @@ export async function updateProfile(profile) {
 export async function uploadAvatar(dataUrl) {
   const token = getStoredToken();
   if (!token) throw new Error("Não autenticado");
-  const res = await fetch(`${BASE}/api/upload-avatar`, {
+  const res = await fetch(`${getBase()}/api/upload-avatar`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
