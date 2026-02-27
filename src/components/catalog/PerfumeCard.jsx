@@ -1,15 +1,17 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { getPerfumeDisplayData } from "@/data/perfumes";
+import { useContextElement } from "@/context/Context";
 
 /**
  * Card de um perfume para o catálogo.
  * Se onSelect for passado, o clique abre o modal em vez de ir ao link.
- * @param {Object} perfume - Item bruto do JSON (com catalogSource).
- * @param {string} [className] - Classes adicionais no wrapper.
- * @param {function} [onSelect] - Callback ao clicar (abre modal); se não passado, o link externo é usado.
+ * Sempre redireciona para a página do perfume no nosso site (/perfume/:id), nunca para link externo.
  */
 export default function PerfumeCard({ perfume, className = "", onSelect }) {
+  const { addProductToCart, isAddedToCartProducts, cartLoading } = useContextElement();
   const d = getPerfumeDisplayData(perfume);
+  const perfumeUrl = perfume?.id ? `/perfume/${perfume.id}` : "/catalogo";
 
   const handleClick = (e) => {
     if (onSelect) {
@@ -18,14 +20,23 @@ export default function PerfumeCard({ perfume, className = "", onSelect }) {
     }
   };
 
-  const linkProps = onSelect
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!perfume?.id) return;
+    const snapshot = { id: perfume.id, title: d.title, imgSrc: d.imageUrl ?? "", price: d.priceMin ?? 0 };
+    addProductToCart(perfume.id, 1, true, snapshot);
+  };
+
+  const Wrapper = onSelect ? "a" : Link;
+  const wrapperProps = onSelect
     ? { href: "#", onClick: handleClick }
-    : { href: d.url, target: "_blank", rel: "noopener noreferrer" };
+    : { to: perfumeUrl };
 
   return (
     <div className={`card-product grid style-1 ${className}`}>
       <div className="card-product-wrapper">
-        <a className="product-img" {...linkProps}>
+        <Wrapper className="product-img" {...wrapperProps}>
           {d.imageUrl ? (
             <>
               <img
@@ -55,7 +66,7 @@ export default function PerfumeCard({ perfume, className = "", onSelect }) {
               <span className="icon icon-user text-muted" style={{ fontSize: "3rem" }} />
             </div>
           )}
-        </a>
+        </Wrapper>
         {d.catalogLabel && (
           <div className="on-sale-wrap">
             <span className="on-sale-item">{d.catalogLabel}</span>
@@ -63,12 +74,20 @@ export default function PerfumeCard({ perfume, className = "", onSelect }) {
         )}
       </div>
       <div className="card-product-info">
-        <a className="name-product link fw-medium text-md" {...linkProps}>
+        <Wrapper className="name-product link fw-medium text-md" {...wrapperProps}>
           {d.title}
-        </a>
+        </Wrapper>
         <p className="price-wrap fw-medium">
           <span className="price-new text-primary">{d.priceShort}</span>
         </p>
+        <button
+          type="button"
+          className="tf-btn btn-out-line-dark2 animate-btn w-100 btn-sm mt-1"
+          disabled={cartLoading}
+          onClick={handleAddToCart}
+        >
+          {isAddedToCartProducts(perfume.id) ? "No carrinho" : "Adicionar ao carrinho"}
+        </button>
       </div>
     </div>
   );

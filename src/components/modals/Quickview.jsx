@@ -19,6 +19,18 @@ export default function Quickview() {
     cartProducts,
     updateQuantity,
   } = useContextElement();
+  if (!quickViewItem) {
+    return (
+      <div className="modal fade modalCentered modal-quick-view" id="quickView">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <span className="icon-close icon-close-popup" data-bs-dismiss="modal" />
+            <div className="p-4 text-center text-muted">Nenhum produto selecionado.</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="modal fade modalCentered modal-quick-view" id="quickView">
       <div className="modal-dialog modal-dialog-centered">

@@ -10,12 +10,18 @@ export function getAuthFacebookUrl() {
   return BASE ? `${BASE}/api/auth-facebook` : "/api/auth-facebook";
 }
 
-export async function register({ email, password, name }) {
+export async function register({ phone, password, name, email, country }) {
   const url = `${BASE}/api/register`;
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, name: name || undefined }),
+    body: JSON.stringify({
+      phone: phone?.trim().replace(/\s/g, "") || "",
+      password,
+      name: name || undefined,
+      email: email?.trim() || undefined,
+      country: country || "BR",
+    }),
   });
   const contentType = res.headers.get("content-type") || "";
   const data = contentType.includes("application/json")
@@ -34,11 +40,15 @@ export async function register({ email, password, name }) {
   return data;
 }
 
-export async function login({ email, password }) {
+export async function login({ phone, password, country }) {
   const res = await fetch(`${BASE}/api/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      phone: phone?.trim().replace(/\s/g, "") || "",
+      password,
+      country: country || "BR",
+    }),
   });
   const contentType = res.headers.get("content-type") || "";
   const data = contentType.includes("application/json")

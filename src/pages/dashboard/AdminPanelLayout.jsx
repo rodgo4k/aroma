@@ -1,0 +1,96 @@
+import Footer1 from "@/components/footers/Footer1";
+import Header1 from "@/components/headers/Header1";
+import Topbar2 from "@/components/headers/Topbar2";
+import React, { useEffect, useState } from "react";
+import { Navigate, Outlet } from "react-router-dom";
+import { useContextElement } from "@/context/Context";
+import { checkAdmin } from "@/api/auth";
+import MetaComponent from "@/components/common/MetaComponent";
+import Breadcumb from "@/components/common/Breadcumb";
+import AdminSidebar from "@/components/dashboard/AdminSidebar";
+
+const metadata = {
+  title: "Painel de Controle | Aroma",
+  description: "Área administrativa",
+};
+
+export default function AdminPanelLayout() {
+  const { user } = useContextElement();
+  const [adminVerified, setAdminVerified] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const ok = await checkAdmin();
+      if (!cancelled) setAdminVerified(ok);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role !== "admin") return <Navigate to="/" replace />;
+  if (adminVerified === null) {
+    return (
+      <>
+        <MetaComponent meta={metadata} />
+        <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
+        <Header1 />
+        <section className="tf-section">
+          <div className="container">
+            <div className="row justify-content-center">
+              <div className="col-12 text-center py-5">
+                <p className="text-muted">Verificando permissão...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <Footer1 />
+      </>
+    );
+  }
+  if (adminVerified === false) return <Navigate to="/" replace />;
+
+  return (
+    <>
+      <MetaComponent meta={metadata} />
+      <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
+      <Header1 />
+      <Breadcumb pageName="Painel" pageTitle="Painel de Controle" />
+      <div className="flat-spacing-13">
+        <div className="container-7">
+          <div className="btn-sidebar-mb d-lg-none">
+            <button data-bs-toggle="offcanvas" data-bs-target="#mbAdminSidebar" type="button">
+              <i className="icon icon-sidebar" />
+            </button>
+          </div>
+          <div className="main-content-account">
+            <div className="sidebar-account-wrap sidebar-content-wrap sticky-top d-lg-block d-none">
+              <ul className="my-account-nav">
+                <AdminSidebar />
+              </ul>
+            </div>
+            <div className="my-acount-content">
+              <Outlet />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="offcanvas offcanvas-start canvas-filter canvas-sidebar canvas-sidebar-account" id="mbAdminSidebar" tabIndex={-1}>
+        <div className="canvas-wrapper">
+          <div className="canvas-header">
+            <span className="title">Menu do painel</span>
+            <button className="icon-close icon-close-popup" data-bs-dismiss="offcanvas" type="button" aria-label="Fechar" />
+          </div>
+          <div className="canvas-body">
+            <div className="sidebar-account-wrap sidebar-mobile-append">
+              <ul className="my-account-nav">
+                <AdminSidebar />
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer1 />
+    </>
+  );
+}

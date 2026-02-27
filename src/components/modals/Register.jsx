@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { register as apiRegister, setStoredToken, getMe, getAuthGoogleUrl, getAuthFacebookUrl } from "@/api/auth";
 import { useContextElement } from "@/context/Context";
+import { COUNTRY_OPTIONS } from "@/constants/countries";
 
 export default function Register() {
   const { setUser } = useContextElement();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [country, setCountry] = useState("BR");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +20,13 @@ export default function Register() {
     setLoading(true);
     try {
       const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || undefined;
-      const data = await apiRegister({ email: email.trim(), password, name });
+      const data = await apiRegister({
+        phone: phone.trim().replace(/\s/g, ""),
+        password,
+        name,
+        email: email.trim() || undefined,
+        country,
+      });
       setStoredToken(data.token);
       try {
         const fullUser = await getMe();
@@ -28,6 +37,7 @@ export default function Register() {
       document.querySelector("#register .icon-close-popup")?.click();
       setFirstName("");
       setLastName("");
+      setPhone("");
       setEmail("");
       setPassword("");
     } catch (err) {
@@ -75,13 +85,34 @@ export default function Register() {
                   onChange={(e) => setLastName(e.target.value)}
                 />
               </fieldset>
+              <fieldset className="mb_12">
+                <label className="form-label text-sm text-main-2 mb-1">País</label>
+                <select
+                  className="form-select"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  aria-label="Código do país"
+                >
+                  {COUNTRY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.code}>{c.label}</option>
+                  ))}
+                </select>
+              </fieldset>
+              <fieldset className="email mb_12">
+                <input
+                  type="tel"
+                  placeholder="DDD + número (ex.: 11 99999-9999)*"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </fieldset>
               <fieldset className="email mb_12">
                 <input
                   type="email"
-                  placeholder="Email*"
+                  placeholder="E-mail (opcional)"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                 />
               </fieldset>
               <fieldset className="password">
