@@ -12,7 +12,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { phone, password, country } = req.body || {};
+    // Garantir body parseado (Vercel pode enviar como objeto ou string)
+    let body = req.body;
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        body = {};
+      }
+    }
+    body = body || {};
+    const phone = body.phone ?? body.telefone;
+    const password = body.password;
+    const country = body.country;
     const passwordStr = typeof password === "string" ? password : "";
     const countryCode = typeof country === "string" && country.trim() ? country.trim().toUpperCase().slice(0, 2) : "BR";
     const phoneRaw = typeof phone === "string" ? phone.trim().replace(/\s/g, "") : "";
