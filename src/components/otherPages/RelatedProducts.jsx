@@ -10,7 +10,7 @@ export default function RelatedProducts() {
     <section className="flat-spacing pt-0">
       <div className="container">
         <div className="flat-title wow fadeInUp">
-          <h4 className="title">You May Also Like</h4>
+          <h4 className="title">Você também pode gostar</h4>
         </div>
         <div className="fl-control-sw pos2">
           <Swiper

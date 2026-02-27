@@ -1,5 +1,3 @@
-import { products1 } from "@/data/products";
-
 import { Link } from "react-router-dom";
 import React from "react";
 import ProgressBarComponent from "../common/Progressbar";
@@ -39,69 +37,11 @@ export default function Cartmodal2() {
             />
             <p className="display-sm">Your cart is empty</p>
             <Link
-              to={`/shop-default`}
+              to="/catalogo"
               className="tf-btn animate-btn d-inline-flex bg-dark-2 w-max-content"
             >
-              Return to Shop
+              Ver catálogo
             </Link>
-          </div>
-          <div className="tf-mini-cart-wrap">
-            <div className="tf-mini-cart-main">
-              <div className="tf-mini-cart-sroll">
-                <div className="tf-minicart-recommendations">
-                  <div className="tf-minicart-recommendations-heading">
-                    <div className="tf-minicart-recommendations-title text-xl-2 fw-medium">
-                      You may also like
-                    </div>
-                  </div>
-                  <div className="tf-mini-cart-items">
-                    {products1.slice(0, 3).map((product, i) => (
-                      <div key={i} className="tf-mini-cart-item p-0 radius-16">
-                        <div className="tf-mini-cart-image">
-                          <Link to={`/product-detail/${product.id}`}>
-                            <img
-                              className="lazyload"
-                              alt="img-product"
-                              src={product.imgSrc}
-                              width={684}
-                              height={972}
-                            />
-                          </Link>
-                        </div>
-                        <div className="tf-mini-cart-info justify-content-center">
-                          <Link
-                            className="title link text-md fw-medium"
-                            to={`/product-detail/${product.id}`}
-                          >
-                            {product.title}
-                          </Link>
-                          <p className="price-wrap text-sm fw-medium">
-                            <span
-                              className={`new-price ${
-                                product.oldPrice ? "text-primary" : ""
-                              } `}
-                            >
-                              ${product.price.toFixed(2)}
-                            </span>{" "}
-                            {product.oldPrice && (
-                              <span className="old-price text-decoration-line-through text-dark-1">
-                                ${product.oldPrice?.toFixed(2)}
-                              </span>
-                            )}
-                          </p>
-                          <Link
-                            to={`/view-cart`}
-                            className="tf-btn animate-btn d-inline-flex bg-dark-2 w-max-content"
-                          >
-                            Add to cart
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

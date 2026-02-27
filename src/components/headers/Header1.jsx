@@ -31,7 +31,7 @@ export default function Header1({
               <img
                 alt="logo"
                 className="logo"
-                src="/images/logo/logo.svg"
+                src="/images/logo/aromaexpresso.svg"
                 width={148}
                 height={44}
               />
@@ -47,13 +47,9 @@ export default function Header1({
           <div className="col-xl-2 col-md-4 col-3">
             <ul className="nav-icon d-flex justify-content-end align-items-center">
               <li className="nav-search">
-                <a
-                  href="#search"
-                  data-bs-toggle="modal"
-                  className="nav-icon-item"
-                >
+                <Link to="/catalogo" className="nav-icon-item">
                   <i className="icon icon-search" />
-                </a>
+                </Link>
               </li>
               <UserAccountTrigger />
               <li className="nav-wishlist">

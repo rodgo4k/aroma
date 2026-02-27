@@ -18,7 +18,7 @@ export default function Banner() {
           </div>
           <div className="banner-content text-center text-white">
             <div className="box-title wow fadeInUp">
-              <p className="season text-md fw-medium">OFERTA DE FINAL DE ANO</p>
+              <p className="season text-md fw-medium">OFERTA ESPECIAL</p>
               <h2 className="fw-medium text-white">FRETE GRÁTIS</h2>
             </div>
             <div className="box-countdown d-flex justify-content-center wow fadeInUp text-dark">

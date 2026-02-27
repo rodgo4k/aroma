@@ -1,63 +1,58 @@
 "use client";
 import { useContextElement } from "@/context/Context";
-import { allProducts } from "@/data/products";
 import React, { useEffect, useState } from "react";
-import ProductCard12 from "../productCards/ProductCard12";
 import { Link } from "react-router-dom";
+import PerfumeCard from "@/components/catalog/PerfumeCard";
 
 export default function Wishlist() {
-  const { wishList } = useContextElement();
-  const [items, setItems] = useState(allProducts);
+  const { user, wishListItems, wishListLoading, removeFromWishlist } = useContextElement();
+  const [items, setItems] = useState([]);
+
   useEffect(() => {
-    setItems([...allProducts.filter((elm) => wishList.includes(elm.id))]);
-  }, [wishList]);
+    setItems(Array.isArray(wishListItems) ? wishListItems : []);
+  }, [wishListItems]);
   return (
     <section className="s-account flat-spacing-4 pt_0">
       <div className="container">
         <div className="row">
           <div className="col-lg-12">
-            {items.length ? (
+            {!user ? (
+              <div className="p-4 rounded bg-light">
+                <div className="mb-2">Faça login para ver sua lista de desejos.</div>
+                <Link className="tf-btn btn-dark2 animate-btn mt-2" to="/catalogo">
+                  Ver catálogo
+                </Link>
+              </div>
+            ) : wishListLoading ? (
+              <div className="text-muted py-4">Carregando lista de desejos…</div>
+            ) : items.length ? (
               <div
                 className="wrapper-shop tf-grid-layout tf-col-2 lg-col-3 xl-col-4 style-1"
                 id="gridLayout"
               >
-                {items.map((product, i) => (
-                  <ProductCard12 key={i} product={product} />
+                {items.map((perfume, i) => (
+                  <div key={perfume.id ?? `w-${i}`}>
+                    <PerfumeCard perfume={perfume} />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger w-100 mt-2"
+                      onClick={() => removeFromWishlist(perfume.id)}
+                    >
+                      Remover
+                    </button>
+                  </div>
                 ))}
-
-                {/* Pagination */}
-                <ul className="wg-pagination">
-                  <li className="active">
-                    <div className="pagination-item">1</div>
-                  </li>
-                  <li>
-                    <a href="#" className="pagination-item">
-                      2
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="pagination-item">
-                      3
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="pagination-item">
-                      <i className="icon-arr-right2" />
-                    </a>
-                  </li>
-                </ul>
               </div>
             ) : (
               <div className="">
                 <div>
-                  Your wishlist is empty. Start adding favorite products to
-                  wishlist!
+                  Sua lista de desejos está vazia. Adicione perfumes do catálogo!
                 </div>{" "}
                 <Link
                   className="tf-btn btn-dark2 animate-btn mt-3"
-                  href="/shop-default"
+                  to="/catalogo"
                 >
-                  Explore Products
+                  Ver catálogo
                 </Link>
               </div>
             )}

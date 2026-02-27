@@ -6,7 +6,6 @@ import Breadcumb from "@/components/common/Breadcumb";
 import MetaComponent from "@/components/common/MetaComponent";
 import CatalogFilters from "@/components/catalog/CatalogFilters";
 import PerfumeCard from "@/components/catalog/PerfumeCard";
-import PerfumeDetailModal from "@/components/catalog/PerfumeDetailModal";
 import Features from "@/components/products/Features";
 import { getPerfumesList } from "@/api/perfumes";
 import { getPerfumeDisplayData } from "@/data/perfumes";
@@ -27,7 +26,6 @@ export default function CatalogPage() {
   const [priceMaxInput, setPriceMaxInput] = useState("");
   const [sortValue, setSortValue] = useState("default");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedPerfume, setSelectedPerfume] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -171,11 +169,7 @@ export default function CatalogPage() {
               </div>
             ) : paginatedList.length ? (
               paginatedList.map((perfume, i) => (
-                <PerfumeCard
-                  key={perfume.id ?? `perfume-${i}`}
-                  perfume={perfume}
-                  onSelect={setSelectedPerfume}
-                />
+                <PerfumeCard key={perfume.id ?? `perfume-${i}`} perfume={perfume} />
               ))
             ) : (
               <div className="col-12 text-center py-5">
@@ -229,10 +223,6 @@ export default function CatalogPage() {
         </div>
       </section>
 
-      <PerfumeDetailModal
-        perfume={selectedPerfume}
-        onClose={() => setSelectedPerfume(null)}
-      />
       <Features />
       <Footer1 />
     </>

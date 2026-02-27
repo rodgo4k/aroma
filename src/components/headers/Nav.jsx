@@ -88,20 +88,26 @@ export default function Nav() {
         </Link>
       </li>
       <li className="menu-item">
-        <a href="https://themeforest.net/user/themesflat" className="item-link">
+        <Link
+          to="/about-us"
+          className={`item-link ${pathname === "/about-us" ? "menuActive" : ""}`}
+        >
           Sobre Nós
-        </a>
+        </Link>
       </li>
       <li className="menu-item">
-        <a href="https://themeforest.net/user/themesflat" className="item-link">
+        <Link
+          to="/contact-us"
+          className={`item-link ${pathname === "/contact-us" ? "menuActive" : ""}`}
+        >
           Contato
-        </a>
+        </Link>
       </li>
       {isAdmin && (
         <li className="menu-item">
           <Link
             to="/painel"
-            className={`item-link ${pathname === "/painel" ? "menuActive" : ""}`}
+            className={`item-link ${pathname.startsWith("/painel") ? "menuActive" : ""}`}
           >
             Painel de Controle
           </Link>

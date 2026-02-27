@@ -33,7 +33,7 @@ export default function UserMenu() {
     city: "",
     state: "",
     country: "",
-    phone: "",
+    email: "",
   });
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function UserMenu() {
         city: user.city || "",
         state: user.state || "",
         country: user.country || "",
-        phone: user.phone || "",
+        email: user.email || "",
       });
     }
   }, [user]);
@@ -98,7 +98,7 @@ export default function UserMenu() {
         city: form.city || null,
         state: form.state || null,
         country: form.country || null,
-        phone: form.phone || null,
+        email: form.email || null,
       });
       setUser(updated);
       setEditing(false);
@@ -157,9 +157,16 @@ export default function UserMenu() {
                     <strong>{user.name}</strong>
                   </p>
                 ) : null}
-                <p className="text-sm text-main-2 mb_8">
-                  <span>{user.email}</span>
-                </p>
+                {user.phone && (
+                  <p className="text-sm text-main-2 mb_8">
+                    <span className="text-muted">Telefone:</span> {user.phone}
+                  </p>
+                )}
+                {user.email && (
+                  <p className="text-sm text-main-2 mb_8">
+                    <span className="text-muted">E-mail:</span> {user.email}
+                  </p>
+                )}
                 {age != null && (
                   <p className="text-sm text-main-2 mb_8">
                     <span className="text-muted">Idade:</span> {age} anos
@@ -168,11 +175,6 @@ export default function UserMenu() {
                 {location && (
                   <p className="text-sm text-main-2 mb_8">
                     <span className="text-muted">Localização:</span> {location}
-                  </p>
-                )}
-                {user.phone && (
-                  <p className="text-sm text-main-2 mb_8">
-                    <span className="text-muted">Telefone:</span> {user.phone}
                   </p>
                 )}
               </div>
@@ -302,13 +304,13 @@ export default function UserMenu() {
                 />
               </fieldset>
               <fieldset className="mb_12">
-                <label className="text-sm text-main-2 d-block mb_4">Telefone</label>
+                <label className="text-sm text-main-2 d-block mb_4">E-mail</label>
                 <input
-                  type="tel"
+                  type="email"
                   className="form-control"
-                  placeholder="Telefone"
-                  value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="E-mail (opcional)"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 />
               </fieldset>
               <div className="button-wrap">

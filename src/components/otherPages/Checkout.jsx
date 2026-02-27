@@ -1,148 +1,242 @@
 "use client";
 
 import { useContextElement } from "@/context/Context";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { updateProfile } from "@/api/auth";
+import { createOrder } from "@/api/orders";
+import { getCart } from "@/api/cart";
+
+const BR_STATES = [
+  { value: "", label: "Estado" },
+  { value: "AC", label: "Acre" }, { value: "AL", label: "Alagoas" }, { value: "AM", label: "Amazonas" }, { value: "AP", label: "Amapá" },
+  { value: "BA", label: "Bahia" }, { value: "CE", label: "Ceará" }, { value: "DF", label: "Distrito Federal" }, { value: "ES", label: "Espírito Santo" },
+  { value: "GO", label: "Goiás" }, { value: "MA", label: "Maranhão" }, { value: "MG", label: "Minas Gerais" }, { value: "MS", label: "Mato Grosso do Sul" },
+  { value: "MT", label: "Mato Grosso" }, { value: "PA", label: "Pará" }, { value: "PB", label: "Paraíba" }, { value: "PE", label: "Pernambuco" },
+  { value: "PI", label: "Piauí" }, { value: "PR", label: "Paraná" }, { value: "RJ", label: "Rio de Janeiro" }, { value: "RN", label: "Rio Grande do Norte" },
+  { value: "RO", label: "Rondônia" }, { value: "RR", label: "Roraima" }, { value: "RS", label: "Rio Grande do Sul" }, { value: "SC", label: "Santa Catarina" },
+  { value: "SE", label: "Sergipe" }, { value: "SP", label: "São Paulo" }, { value: "TO", label: "Tocantins" },
+];
 
 export default function Checkout() {
-  const {
-    cartProducts,
+  const { user, cartProducts, totalPrice, setCartProducts, setUser } = useContextElement();
+  const navigate = useNavigate();
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [country, setCountry] = useState("");
+  const [address, setAddress] = useState("");
+  const [apartment, setApartment] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zipcode, setZipcode] = useState("");
+  const [phone, setPhone] = useState("");
+  const [contact, setContact] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-    totalPrice,
-  } = useContextElement();
+  useEffect(() => {
+    if (!user) return;
+    const nameParts = (user.name || "").trim().split(/\s+/);
+    setFirstname(nameParts[0] || "");
+    setLastname(nameParts.slice(1).join(" ") || "");
+    setCountry(user.country ?? "");
+    setAddress(user.address ?? "");
+    setApartment(user.address_complement ?? "");
+    setCity(user.city ?? "");
+    setState(user.state ?? "");
+    setZipcode(user.zipcode ?? "");
+    setPhone(user.phone ?? "");
+    setContact(user.email || user.phone || "");
+  }, [user]);
+
+  const discount = 10;
+  const shippingCost = 10;
+  const taxCost = 10;
+  const orderTotal = totalPrice ? totalPrice - discount + shippingCost + taxCost : 0;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!cartProducts.length) {
+      setError("Seu carrinho está vazio.");
+      return;
+    }
+    if (!user) {
+      setError("Faça login para finalizar o pedido.");
+      return;
+    }
+    const name = [firstname, lastname].filter(Boolean).join(" ").trim();
+    if (!name || !address?.trim() || !city?.trim() || !phone?.trim()) {
+      setError("Preencha nome, endereço, cidade e telefone.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      if (user) {
+        await updateProfile({
+          name: name || user.name,
+          address: address.trim() || null,
+          address_complement: apartment.trim() || null,
+          zipcode: zipcode.trim() || null,
+          city: city.trim() || null,
+          state: state || null,
+          country: country.trim() || null,
+          phone: phone.trim() || user.phone,
+        });
+        const updatedUser = { ...user, name, address: address.trim(), address_complement: apartment.trim(), zipcode: zipcode.trim(), city: city.trim(), state, country: country.trim(), phone: phone.trim() };
+        setUser(updatedUser);
+      }
+      await createOrder({
+        subtotal: totalPrice,
+        discount,
+        shipping: shippingCost,
+        tax: taxCost,
+        total: orderTotal,
+        shipping_name: name,
+        shipping_address: address.trim(),
+        shipping_complement: apartment.trim() || null,
+        shipping_city: city.trim(),
+        shipping_state: state || null,
+        shipping_zipcode: zipcode.trim() || null,
+        shipping_country: country.trim() || null,
+        shipping_phone: phone.trim(),
+        payment_method: paymentMethod,
+      });
+      const { items } = await getCart();
+      setCartProducts(items);
+      navigate("/checkout/thank-you", { state: { orderSuccess: true } });
+    } catch (err) {
+      setError(err.message || "Erro ao finalizar pedido. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flat-spacing-25">
       <div className="container">
-        <div className="row">
-          <div className="col-xl-8">
-            <form className="tf-checkout-cart-main">
-              <div className="box-ip-checkout">
-                <div className="title text-xl fw-medium">Checkout</div>
-                <div className="grid-2 mb_16">
-                  <div className="tf-field style-2 style-3">
+        <form onSubmit={handleSubmit}>
+          <div className="row">
+            <div className="col-xl-8">
+              <div className="tf-checkout-cart-main">
+                <div className="box-ip-checkout">
+                  <div className="title text-xl fw-medium">Checkout</div>
+                  {error && <div className="alert alert-danger mb_16">{error}</div>}
+                  <div className="grid-2 mb_16">
+                    <div className="tf-field style-2 style-3">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="firstname"
+                        placeholder=" "
+                        type="text"
+                        value={firstname}
+                        onChange={(e) => setFirstname(e.target.value)}
+                      />
+                      <label className="tf-field-label" htmlFor="firstname">Primeiro nome</label>
+                    </div>
+                    <div className="tf-field style-2 style-3">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="lastname"
+                        placeholder=" "
+                        type="text"
+                        value={lastname}
+                        onChange={(e) => setLastname(e.target.value)}
+                      />
+                      <label className="tf-field-label" htmlFor="lastname">Último nome</label>
+                    </div>
+                  </div>
+                  <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
                       className="tf-field-input tf-input"
-                      id="firstname"
-                      placeholder=" "
+                      id="country"
                       type="text"
-                      name="firstname"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder=""
                     />
-                    <label className="tf-field-label" htmlFor="firstname">
-                      First name
-                    </label>
-                  </div>
-                  <div className="tf-field style-2 style-3">
+                    <label className="tf-field-label" htmlFor="country">País</label>
+                  </fieldset>
+                  <fieldset className="tf-field style-2 style-3 mb_16">
                     <input
                       className="tf-field-input tf-input"
-                      id="lastname"
-                      placeholder=" "
+                      id="address"
                       type="text"
-                      name="lastname"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder=""
                     />
-                    <label className="tf-field-label" htmlFor="lastname">
-                      Last name
-                    </label>
+                    <label className="tf-field-label" htmlFor="address">Endereço</label>
+                  </fieldset>
+                  <fieldset className="mb_16">
+                    <input
+                      type="text"
+                      className="style-2"
+                      placeholder="Apartamento, suite, etc (opcional)"
+                      value={apartment}
+                      onChange={(e) => setApartment(e.target.value)}
+                    />
+                  </fieldset>
+                  <div className="grid-3 mb_16">
+                    <fieldset className="tf-field style-2 style-3">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="city"
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder=""
+                      />
+                      <label className="tf-field-label" htmlFor="city">Cidade</label>
+                    </fieldset>
+                    <div className="tf-select select-square">
+                      <select id="state" value={state} onChange={(e) => setState(e.target.value)}>
+                        {BR_STATES.map((opt) => (
+                          <option key={opt.value || "empty"} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <fieldset className="tf-field style-2 style-3">
+                      <input
+                        className="tf-field-input tf-input"
+                        id="code"
+                        type="text"
+                        value={zipcode}
+                        onChange={(e) => setZipcode(e.target.value)}
+                        placeholder=""
+                      />
+                      <label className="tf-field-label" htmlFor="code">CEP/Postal</label>
+                    </fieldset>
                   </div>
+                  <fieldset className="tf-field style-2 style-3 mb_16">
+                    <input
+                      className="tf-field-input tf-input"
+                      id="phone"
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder=""
+                    />
+                    <label className="tf-field-label" htmlFor="phone">Telefone</label>
+                  </fieldset>
                 </div>
-                <fieldset className="tf-field style-2 style-3 mb_16">
+                <div className="box-ip-contact">
+                  <div className="title">
+                    <div className="text-xl fw-medium">Informações de contato</div>
+                    <Link to="/login" className="text-sm link">Entrar</Link>
+                  </div>
                   <input
-                    className="tf-field-input tf-input"
-                    id="country"
-                    type="text"
-                    name="country"
-                    placeholder=""
-                  />
-                  <label className="tf-field-label" htmlFor="country">
-                    Country
-                  </label>
-                </fieldset>
-                <fieldset className="tf-field style-2 style-3 mb_16">
-                  <input
-                    className="tf-field-input tf-input"
-                    id="address"
-                    type="text"
-                    name="address"
-                    placeholder=""
-                  />
-                  <label className="tf-field-label" htmlFor="address">
-                    Address
-                  </label>
-                </fieldset>
-                <fieldset className="mb_16">
-                  <input
-                    type="text"
                     className="style-2"
-                    name="apartment"
-                    placeholder="Apartment, suite, etc (optional)"
-                  />
-                </fieldset>
-                <div className="grid-3 mb_16">
-                  <fieldset className="tf-field style-2 style-3">
-                    <input
-                      className="tf-field-input tf-input"
-                      id="city"
-                      type="text"
-                      name="city"
-                      placeholder=""
-                    />
-                    <label className="tf-field-label" htmlFor="city">
-                      City
-                    </label>
-                  </fieldset>
-                  <div className="tf-select select-square">
-                    <select name="State" id="state">
-                      <option value="">State</option>
-                      <option value="alabama">Alabama</option>
-                      <option value="alaska">Alaska</option>
-                      <option value="california">California</option>
-                      <option value="hawaii">Hawaii</option>
-                      <option value="texas">Texas</option>
-                      <option value="georgia">Georgia</option>
-                    </select>
-                  </div>
-                  <fieldset className="tf-field style-2 style-3">
-                    <input
-                      className="tf-field-input tf-input"
-                      id="code"
-                      type="text"
-                      name="zipcode"
-                      placeholder=""
-                    />
-                    <label className="tf-field-label" htmlFor="code">
-                      Zipcode/Postal
-                    </label>
-                  </fieldset>
-                </div>
-                <fieldset className="tf-field style-2 style-3 mb_16">
-                  <input
-                    className="tf-field-input tf-input"
-                    id="phone"
+                    id="contact"
+                    placeholder="Email ou número de telefone"
                     type="text"
-                    name="phone"
-                    placeholder=""
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
                   />
-                  <label className="tf-field-label" htmlFor="phone">
-                    Phone
-                  </label>
-                </fieldset>
-              </div>
-              <div className="box-ip-contact">
-                <div className="title">
-                  <div className="text-xl fw-medium">Contact Information</div>
-                  <a href="#login" className="text-sm link">
-                    Log in
-                  </a>
                 </div>
-                <input
-                  className="style-2"
-                  id="email/phone"
-                  placeholder="Email or phone number"
-                  type="text"
-                  name="email/phone"
-                />
-              </div>
               <div className="box-ip-shipping">
-                <div className="title text-xl fw-medium">Shipping Method</div>
+                <div className="title text-xl fw-medium">Método de entrega</div>
                 <fieldset className="mb_16">
                   <label htmlFor="freeship" className="check-ship">
                     <input
@@ -152,12 +246,12 @@ export default function Checkout() {
                       name="checkshipping"
                     />
                     <span className="text text-sm">
-                      <span>Free Shipping (Estimate in 7/10 - 10/10/2025)</span>
+                      <span>Frete Grátis (Estimativa em 7/10 - 10/10/2025)</span>
                       <span className="price">$00.00</span>
                     </span>
                   </label>
                 </fieldset>
-                <fieldset>
+                {/* <fieldset>
                   <label htmlFor="expship" className="check-ship">
                     <input
                       type="radio"
@@ -168,37 +262,38 @@ export default function Checkout() {
                     />
                     <span className="text text-sm">
                       <span>
-                        Express Shipping (Estimate in 4/10 - 5/10/2025)
+                        Frete Express (Estimativa em 4/10 - 5/10/2025)
                       </span>
                       <span className="price">$10.00</span>
                     </span>
                   </label>
-                </fieldset>
+                </fieldset> */}
               </div>
               <div className="box-ip-payment">
                 <div className="title">
-                  <div className="text-lg fw-medium mb_4">Payment</div>
+                  <div className="text-lg fw-medium mb_4">Pagamento</div>
                   <p className="text-sm text-main">
-                    All transactions are secure and encrypted.
+                    Todas as transações são seguras e criptografadas.
                   </p>
                 </div>
                 <fieldset className="mb_12">
                   <label htmlFor="bank-transfer" className="check-payment">
                     <input
-                      type="checkbox"
+                      type="radio"
                       id="bank-transfer"
                       className="tf-check-rounded"
-                      name="bank-transfer"
+                      name="payment-method"
+                      checked={paymentMethod === "bank_transfer"}
+                      onChange={() => setPaymentMethod("bank_transfer")}
                     />
                     <span className="text-payment text-sm">
-                      Direct bank transfer
+                      Transferência bancária direta
                     </span>
                   </label>
                 </fieldset>
                 <p className="mb_16 text-main">
-                  Make your payment directly into our bank account. Please use
-                  your Order ID as the payment reference.Your order will not be
-                  shipped until the funds have cleared in our account.
+                  Faça seu pagamento diretamente na nossa conta bancária. Por favor, use
+                  seu ID de pedido como referência de pagamento. Seu pedido não será enviado até que os fundos tenham sido depositados em nossa conta.
                 </p>
                 <div className="payment-method-box" id="payment-method-box">
                   <div className="payment-item mb_16">
@@ -214,9 +309,11 @@ export default function Checkout() {
                         name="payment-method"
                         className="tf-check-rounded"
                         id="delivery"
+                        checked={paymentMethod === "cash_delivery"}
+                        onChange={() => setPaymentMethod("cash_delivery")}
                       />
                       <span className="pay-title text-sm">
-                        Cash on delivery
+                          Pagamento em dinheiro na entrega
                       </span>
                     </label>
                     <div
@@ -238,9 +335,10 @@ export default function Checkout() {
                         name="payment-method"
                         className="tf-check-rounded"
                         id="credit-card"
-                        defaultChecked=""
+                        checked={paymentMethod === "credit_card"}
+                        onChange={() => setPaymentMethod("credit_card")}
                       />
-                      <span className="pay-title text-sm">Credit Card</span>
+                      <span className="pay-title text-sm">Cartão de crédito</span>
                     </label>
                     <div
                       id="credit-card-payment"
@@ -252,7 +350,7 @@ export default function Checkout() {
                           <input
                             type="text"
                             className="style-2"
-                            placeholder="Card number"
+                            placeholder="Número do cartão"
                           />
                           <img
                             className="card-logo"
@@ -266,19 +364,19 @@ export default function Checkout() {
                           <input
                             type="text"
                             className="style-2"
-                            placeholder="Expiration date (MM/YY)"
+                            placeholder="Data de vencimento (MM/YY)"
                           />
                           <input
                             type="text"
                             className="style-2"
-                            placeholder="Sercurity code"
+                            placeholder="Código de segurança"
                           />
                         </div>
                         <fieldset className="mb_16">
                           <input
                             type="text"
                             className="style-2"
-                            placeholder="Name on card"
+                            placeholder="Nome no cartão"
                           />
                         </fieldset>
                         <div className="cb-ship">
@@ -292,13 +390,13 @@ export default function Checkout() {
                             htmlFor="checkShip"
                             className="text-sm text-main"
                           >
-                            Use shipping address as billing address
+                            Usar endereço de entrega como endereço de cobrança
                           </label>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="payment-item paypal-payment mb_16">
+                  {/* <div className="payment-item paypal-payment mb_16">
                     <label
                       htmlFor="paypal"
                       className="payment-header collapsed"
@@ -328,26 +426,26 @@ export default function Checkout() {
                       className="collapse"
                       data-bs-parent="#payment-method-box"
                     />
-                  </div>
+                  </div> */}
                 </div>
                 <p className="text-dark-6 text-sm">
-                  Your personal data will be used to process your order, support
-                  your experience throughout this website, and for other
-                  purposes described in our
+                  Seus dados pessoais serão usados para processar seu pedido, suportar
+                  sua experiência ao longo deste site, e para outros
+                  propósitos descritos em nossa
                   <Link
                     to={`/privacy-policy`}
                     className="fw-medium text-decoration-underline link text-sm"
                   >
-                    privacy policy.
+                    política de privacidade.
                   </Link>
                 </p>
               </div>
-            </form>
+            </div>
           </div>
           <div className="col-xl-4">
             <div className="tf-page-cart-sidebar">
-              <form action="thank-you.html" className="cart-box order-box">
-                <div className="title text-lg fw-medium">In your cart</div>
+              <div className="cart-box order-box">
+                <div className="title text-lg fw-medium">No seu carrinho</div>
                 {cartProducts.length ? (
                   <ul className="list-order-product">
                     {cartProducts.map((product, i) => (
@@ -377,12 +475,12 @@ export default function Checkout() {
                   </ul>
                 ) : (
                   <div className="p-4">
-                    Your Cart is empty. Start adding favorite products to cart!{" "}
+                    Seu carrinho está vazio. Adicione produtos favoritos ao carrinho!{" "}
                     <Link
                       className="tf-btn btn-dark2 animate-btn mt-3"
-                      href="/shop-default"
+                      to="/shop-default"
                     >
-                      Explore Products
+                      Explorar produtos
                     </Link>
                   </div>
                 )}
@@ -390,47 +488,48 @@ export default function Checkout() {
                   <li className="total-item text-sm d-flex justify-content-between">
                     <span>Subtotal:</span>
                     <span className="price-sub fw-medium">
-                      ${totalPrice.toFixed(2)} USD
+                      R$ {totalPrice.toFixed(2)}
                     </span>
                   </li>
                   <li className="total-item text-sm d-flex justify-content-between">
-                    <span>Discount:</span>
+                    <span>Desconto:</span>
                     <span className="price-discount fw-medium">
-                      {totalPrice ? "$-10 USD" : "$0 USD"}
+                      {totalPrice ? "R$-10" : "R$0"}
                     </span>
                   </li>
                   <li className="total-item text-sm d-flex justify-content-between">
-                    <span>Shipping:</span>
+                    <span>Frete:</span>
                     <span className="price-ship fw-medium">
-                      {totalPrice ? "$10.00 USD" : "$0 USD"}
+                      {totalPrice ? "R$10.00" : "R$0"}
                     </span>
                   </li>
                   <li className="total-item text-sm d-flex justify-content-between">
-                    <span>Tax:</span>
+                    <span>Imposto:</span>
                     <span className="price-tax fw-medium">
-                      {totalPrice ? "$10.00 USD" : "$0 USD"}
+                      {totalPrice ? "R$10.00" : "R$0"}
                     </span>
                   </li>
                 </ul>
                 <div className="subtotal text-lg fw-medium d-flex justify-content-between">
                   <span>Subtotal:</span>
                   <span className="total-price-order">
-                    {" "}
-                    ${totalPrice ? (totalPrice + 20).toFixed(2) : "$0"} USD
+                    R$ {totalPrice ? orderTotal.toFixed(2) : "0.00"}
                   </span>
                 </div>
                 <div className="btn-order">
                   <button
                     type="submit"
                     className="tf-btn btn-dark2 animate-btn w-100"
+                    disabled={submitting || !cartProducts.length}
                   >
-                    Place order
+                    {submitting ? "Finalizando…" : "Finalizar pedido"}
                   </button>
                 </div>
-              </form>
+              </div>
             </div>
           </div>
         </div>
+        </form>
       </div>
     </div>
   );

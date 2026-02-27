@@ -4,21 +4,28 @@ import Topbar2 from "@/components/headers/Topbar2";
 import RelatedProducts from "@/components/otherPages/RelatedProducts";
 import ShopCart from "@/components/otherPages/ShopCart";
 import React from "react";
-import { Link } from "react-router-dom";
 import MetaComponent from "@/components/common/MetaComponent";
 import Breadcumb from "@/components/common/Breadcumb";
+import { useContextElement } from "@/context/Context";
+
 const metadata = {
-  title: "View Cart || Vineta - Multipurpose Reactjs eCommerce Template",
-  description: "Vineta - Multipurpose Reactjs eCommerce Template",
+  title: "Carrinho | Aroma Expresso",
+  description: "Carrinho de compras Aroma Expresso",
 };
+
+const FREIGHT_FREE_THRESHOLD = 250;
+
 export default function ViewCartPage() {
+  const { totalPrice } = useContextElement();
+  const progress = Math.min(100, Math.max(0, ((Number(totalPrice) || 0) / FREIGHT_FREE_THRESHOLD) * 100));
+
   return (
     <>
       <MetaComponent meta={metadata} />
       <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
       <Header1 />
       <>
-        <Breadcumb pageName="Cart" pageTitle="Shopping Cart" />
+        <Breadcumb pageName="Carrinho" pageTitle="Carrinho de compras" />
 
         {/* /Title Page */}
         <div className="flat-spacing-24">
@@ -27,15 +34,11 @@ export default function ViewCartPage() {
               <div className="col-xl-4 col-sm-8">
                 <div className="tf-cart-head text-center">
                   <p className="text-xl-3 title text-dark-4">
-                    Spend <span className="fw-medium">$100</span> more to get
-                    <span className="fw-medium">Free Shipping</span>
+                    Gaste <span className="fw-medium">R$250,00</span> ou mais para ganhar{" "}
+                    <span className="fw-medium">Frete Grátis</span>
                   </p>
                   <div className="progress-sold tf-progress-ship">
-                    <div
-                      className="value"
-                      style={{ width: "60%" }}
-                      data-progress={60}
-                    >
+                    <div className="value" style={{ width: `${progress}%` }} data-progress={Math.round(progress)}>
                       <i className="icon icon-car" />
                     </div>
                   </div>
@@ -46,7 +49,7 @@ export default function ViewCartPage() {
         </div>
       </>
       <ShopCart />
-      <RelatedProducts />
+      {/* <RelatedProducts /> */}
       <Footer1 />
     </>
   );
