@@ -20,7 +20,7 @@ import ShareModal from "@/components/modals/ShareModal";
 import WOW from "@/utlis/wow";
 import CartComponent from "@/components/modals/CartComponent";
 import DbSidebar from "@/components/modals/DbSidebar";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ScrollTopBehaviour from "./components/common/ScrollToTopBehaviour";
 import HomePage from "./pages";
 import HomePageFashion2 from "./pages/homes/home-fashion-02";
@@ -58,8 +58,14 @@ import ProductPageStyle3 from "./pages/products/product-style-03";
 import NewsletterPopup3Page from "./pages/homes/newsletter-popup-03";
 import NewsletterPopup2Page from "./pages/homes/newsletter-popup-02";
 import AccountPage from "./pages/dashboard/account-page";
-import AdminPanelPage from "./pages/dashboard/admin-panel";
+import AdminPanelLayout from "./pages/dashboard/AdminPanelLayout";
+import AdminCatalogPage from "./pages/dashboard/admin-panel/AdminCatalogPage";
+import AdminPerfumeDetailPage from "./pages/dashboard/admin-panel/AdminPerfumeDetailPage";
+import AdminUsersPage from "./pages/dashboard/admin-panel/AdminUsersPage";
+import AdminUserDetailPage from "./pages/dashboard/admin-panel/AdminUserDetailPage";
+import AdminAccessPage from "./pages/dashboard/admin-panel/AdminAccessPage";
 import CatalogPage from "./pages/catalog";
+import PerfumePage from "./pages/perfume/PerfumePage";
 import ProductDetailPage from "./pages/product-details/product-detail";
 import ProductDetailPageRightThumbnail from "./pages/product-details/product-right-thumbnail";
 import ProductDetailPageBottomThumbnail from "./pages/product-details/product-bottom-thumbnail";
@@ -107,6 +113,7 @@ import AccountOrderPage from "./pages/dashboard/account-orders";
 import WishlistPage from "./pages/otherPages/wish-list";
 import AccountAddressPage from "./pages/dashboard/account-addresses";
 import CheckoutPage from "./pages/otherPages/checkout";
+import ThankYouPage from "./pages/otherPages/checkout/ThankYouPage";
 import ComparePage from "./pages/otherPages/compare";
 import PrivacyPolicyPage from "./pages/otherPages/privacy-policy";
 import ProductDetailPageAffiliate from "./pages/product-details/product-affiliate";
@@ -256,6 +263,7 @@ function App() {
             <Route path="home-skincare2" element={<HomePageSkincare2 />} />
 
             <Route path="catalogo" element={<CatalogPage />} />
+            <Route path="perfume/:id" element={<PerfumePage />} />
             <Route path="shop-default" element={<ProductPageDefault />} />
             <Route
               path="shop-left-sidebar"
@@ -318,7 +326,14 @@ function App() {
               element={<NewsletterPopup3Page />}
             />
             <Route path="account-page" element={<AccountPage />} />
-            <Route path="painel" element={<AdminPanelPage />} />
+            <Route path="painel" element={<AdminPanelLayout />}>
+              <Route index element={<Navigate to="catalogo" replace />} />
+              <Route path="catalogo" element={<AdminCatalogPage />} />
+              <Route path="catalogo/:id" element={<AdminPerfumeDetailPage />} />
+              <Route path="usuarios" element={<AdminUsersPage />} />
+              <Route path="usuarios/:id" element={<AdminUserDetailPage />} />
+              <Route path="acesso" element={<AdminAccessPage />} />
+            </Route>
 
             <Route path="product-detail/:id" element={<ProductDetailPage />} />
             <Route
@@ -450,6 +465,7 @@ function App() {
             <Route path="cart-drawer-v2" element={<CartDrawerPage2 />} />
             <Route path="view-cart" element={<ViewCartPage />} />
             <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="checkout/thank-you" element={<ThankYouPage />} />
             <Route path="compare" element={<ComparePage />} />
             <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
 

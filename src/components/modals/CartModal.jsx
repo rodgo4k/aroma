@@ -3,24 +3,20 @@ import { useContextElement } from "@/context/Context";
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import QuantitySelect from "../common/QuantitySelect";
-import { products1 } from "@/data/products";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
 
-import ProgressBarComponent from "../common/Progressbar";
 export default function CartModal() {
   const [openTool, setOpenTool] = useState(-1);
   const {
     cartProducts,
-    setCartProducts,
     totalPrice,
     addProductToCart,
     isAddedToCartProducts,
     updateQuantity,
+    removeFromCart,
   } = useContextElement();
 
   const removeItem = (id) => {
-    setCartProducts((pre) => [...pre.filter((elm) => elm.id != id)]);
+    removeFromCart(id);
   };
 
   return (
@@ -30,7 +26,7 @@ export default function CartModal() {
     >
       <div className="canvas-wrapper">
         <div className="popup-header">
-          <span className="title">Shopping cart</span>
+          <span className="title">Carrinho de compras</span>
           <span
             className="icon-close icon-close-popup"
             data-bs-dismiss="offcanvas"
@@ -39,13 +35,16 @@ export default function CartModal() {
         <div className="wrap">
           <div className="tf-mini-cart-threshold">
             <div className="text">
-              Spend <span className="fw-medium">$100</span> more to get
-              <span className="fw-medium">Free Shipping</span>
+              Gaste <span className="fw-medium">R$250,00</span> ou mais para ganhar 
+              <span className="fw-medium"> Frete Grátis</span>
             </div>
             <div className="tf-progress-bar tf-progress-ship">
-              <ProgressBarComponent max={75}>
+              <div
+                className="value"
+                style={{ width: `${Math.min(100, Math.max(0, ((Number(totalPrice) || 0) / 250) * 100))}%` }}
+              >
                 <i className="icon icon-car" />
-              </ProgressBarComponent>
+              </div>
             </div>
           </div>
           <div className="tf-mini-cart-wrap">
@@ -56,7 +55,7 @@ export default function CartModal() {
                     {cartProducts.map((product, i) => (
                       <div key={i} className="tf-mini-cart-item file-delete">
                         <div className="tf-mini-cart-image">
-                          <Link to={`/product-detail/${product.id}`}>
+                          <Link to={`/perfume/${product.id}`}>
                             <img
                               className="lazyload"
                               alt="img-product"
@@ -70,7 +69,7 @@ export default function CartModal() {
                           <div className="d-flex justify-content-between">
                             <Link
                               className="title link text-md fw-medium"
-                              to={`/product-detail/${product.id}`}
+                              to={`/perfume/${product.id}`}
                             >
                               {product.title}
                             </Link>
@@ -80,21 +79,18 @@ export default function CartModal() {
                             />
                           </div>
                           <div className="d-flex gap-10">
-                            <div className="text-xs">White / L</div>
+                            <div className="text-xs">{product.priceShort || ""}</div>
                             <a href="#" className="link edit">
                               <i className="icon-pen" />
                             </a>
                           </div>
                           <p className="price-wrap text-sm fw-medium">
                             <span className="new-price text-primary">
-                              ${(product.price * product.quantity).toFixed(2)}
-                            </span>{" "}
-                            {product.oldPrice && (
-                              <span className="old-price text-decoration-line-through text-dark-1">
-                                $
-                                {(product.oldPrice * product.quantity).toFixed(
-                                  2
-                                )}
+                              {product.priceShort || `R$ ${((Number(product.price) || 0) * product.quantity).toFixed(2)}`}
+                            </span>
+                            {Number(product.oldPrice) > 0 && (
+                              <span className="old-price text-decoration-line-through text-dark-1 ms-1">
+                                R$ {((Number(product.oldPrice) || 0) * product.quantity).toFixed(2)}
                               </span>
                             )}
                           </p>
@@ -111,89 +107,15 @@ export default function CartModal() {
                   </div>
                 ) : (
                   <div className="p-4">
-                    Your Cart is empty. Start adding favorite products to cart!{" "}
+                    Seu carrinho está vazio. Adicione perfumes do catálogo!{" "}
                     <Link
                       className="tf-btn btn-dark2 animate-btn mt-3"
-                      href="/shop-default"
+                      to="/catalogo"
                     >
-                      Explore Products
+                      Ver catálogo
                     </Link>
                   </div>
                 )}
-                <div className="tf-minicart-recommendations">
-                  <div className="tf-minicart-recommendations-heading d-flex justify-content-between align-items-end">
-                    <div className="tf-minicart-recommendations-title text-md fw-medium">
-                      You may also like
-                    </div>
-                    <div className="d-flex gap-10">
-                      <div className="swiper-button-prev nav-swiper arrow-1 size-30 nav-prev-cls" />
-                      <div className="swiper-button-next nav-swiper arrow-1 size-30 nav-next-cls" />
-                    </div>
-                  </div>
-                  <Swiper
-                    dir="ltr"
-                    className="swiper tf-swiper"
-                    {...{
-                      slidesPerView: 1,
-                      spaceBetween: 10,
-                      speed: 800,
-                      autoplay: "play",
-                      observer: true,
-                      observeParents: true,
-                      slidesPerGroup: 1,
-                      navigation: {
-                        clickable: true,
-                        nextEl: ".nav-next-cls",
-                        prevEl: ".nav-prev-cls",
-                      },
-                    }}
-                    modules={[Navigation]}
-                  >
-                    {products1.slice(0, 4).map((product, i) => (
-                      <SwiperSlide key={i} className="swiper-slide">
-                        <div className="tf-mini-cart-item line radius-16">
-                          <div className="tf-mini-cart-image">
-                            <Link to={`/product-detail/${product.id}`}>
-                              <img
-                                className="lazyload"
-                                alt="img-product"
-                                src={product.imgSrc}
-                                width={684}
-                                height={972}
-                              />
-                            </Link>
-                          </div>
-                          <div className="tf-mini-cart-info justify-content-center">
-                            <Link
-                              className="title link text-md fw-medium"
-                              to={`/product-detail/${product.id}`}
-                            >
-                              {product.title}
-                            </Link>
-                            <p className="price-wrap text-sm fw-medium">
-                              <span className="new-price text-primary">
-                                ${product.price.toFixed(2)}
-                              </span>{" "}
-                              {product.oldPrice && (
-                                <span className="old-price text-decoration-line-through text-dark-1">
-                                  ${product.oldPrice.toFixed(2)}
-                                </span>
-                              )}
-                            </p>
-                            <a
-                              className="tf-btn animate-btn d-inline-flex bg-dark-2 w-max-content"
-                              onClick={() => addProductToCart(product.id)}
-                            >
-                              {isAddedToCartProducts(product.id)
-                                ? "Already Added"
-                                : "Add to cart"}
-                            </a>
-                          </div>
-                        </div>
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-                </div>
               </div>
             </div>
             <div className="tf-mini-cart-bottom">
@@ -203,39 +125,39 @@ export default function CartModal() {
                   onClick={() => setOpenTool((pre) => (pre == 1 ? -1 : 1))}
                 >
                   <i className="icon icon-gift2" />
-                  <div className="text-xxs">Add gift wrap</div>
+                  <div className="text-xxs">Adicionar papel de presente</div>
                 </div>
                 <div
                   className="tf-mini-cart-tool-btn btn-add-note"
                   onClick={() => setOpenTool((pre) => (pre == 2 ? -1 : 2))}
                 >
                   <i className="icon icon-note" />
-                  <div className="text-xxs">Order note</div>
+                  <div className="text-xxs">Pedir nota fiscal</div>
                 </div>
                 <div
                   className="tf-mini-cart-tool-btn btn-coupon"
                   onClick={() => setOpenTool((pre) => (pre == 3 ? -1 : 3))}
                 >
                   <i className="icon icon-coupon" />
-                  <div className="text-xxs">Coupon</div>
+                  <div className="text-xxs">Cupom de desconto</div>
                 </div>
                 <div
                   className="tf-mini-cart-tool-btn btn-estimate-shipping"
                   onClick={() => setOpenTool((pre) => (pre == 4 ? -1 : 4))}
                 >
                   <i className="icon icon-car" />
-                  <div className="text-xxs">Shipping</div>
+                  <div className="text-xxs">Entrega</div>
                 </div>
               </div>
               <div className="tf-mini-cart-bottom-wrap">
                 <div className="tf-cart-totals-discounts">
                   <div className="tf-cart-total text-xl fw-medium">Total:</div>
                   <div className="tf-totals-total-value text-xl fw-medium">
-                    ${totalPrice.toFixed(2)} USD
+                    R$ {totalPrice.toFixed(2)}
                   </div>
                 </div>
                 <div className="tf-cart-tax text-sm opacity-8">
-                  Taxes and shipping calculated at checkout
+                  Taxas e entrega calculadas no checkout
                 </div>
                 <div className="tf-cart-checkbox">
                   <div className="tf-checkbox-wrapp">
@@ -250,13 +172,13 @@ export default function CartModal() {
                     </div>
                   </div>
                   <label htmlFor="CartDrawer-Form_agree" className="text-sm">
-                    I agree with the
+                    Concordo com os 
                     <Link
                       to={`/term-and-condition`}
-                      title="Terms of Service"
+                      title="Termos de Serviço"
                       className="fw-medium"
                     >
-                      terms and conditions
+                       termos e condições
                     </Link>
                   </label>
                 </div>
@@ -265,7 +187,7 @@ export default function CartModal() {
                     to={`/view-cart`}
                     className="tf-btn animate-btn d-inline-flex bg-dark-2 w-100 justify-content-center"
                   >
-                    View cart
+                    Ver carrinho
                   </Link>
                   <Link
                     to={`/checkout`}
@@ -290,9 +212,9 @@ export default function CartModal() {
                   Add gift wrap
                 </div>
                 <div className="tf-mini-cart-tool-text1 text-dark-1">
-                  The product will be wrapped carefully. Free is only
-                  <span className="text fw-medium text-dark">$10.00</span>. Do
-                  you want a gift wrap?
+                  O produto será embalado com cuidado. O papel de presente é apenas
+                  <span className="text fw-medium text-dark"> $10.00</span>. 
+                  Você quer um papel de presente?
                 </div>
                 <div className="tf-cart-tool-btns">
                   <button
@@ -324,7 +246,7 @@ export default function CartModal() {
                   htmlFor="Cart-note"
                   className="tf-mini-cart-tool-text text-sm fw-medium"
                 >
-                  Order note
+                  Pedir nota fiscal
                 </label>
                 <textarea
                   name="note"
@@ -359,10 +281,10 @@ export default function CartModal() {
               />
               <form action="#" className="tf-mini-cart-tool-content">
                 <div className="tf-mini-cart-tool-text text-sm fw-medium">
-                  Add coupon
+                  Adicionar cupom de desconto
                 </div>
                 <div className="tf-mini-cart-tool-text1 text-dark-1">
-                  * Discount will be calculated and applied at checkout
+                  * O desconto será calculado e aplicado no checkout
                 </div>
                 <input type="text" name="text" placeholder="" />
                 <div className="tf-cart-tool-btns">
@@ -370,13 +292,13 @@ export default function CartModal() {
                     className="subscribe-button tf-btn animate-btn d-inline-flex bg-dark-2 w-100"
                     type="submit"
                   >
-                    Add a Gift Wrap
+                    Adicionar papel de presente
                   </button>
                   <div
                     className="tf-btn btn-out-line-dark2 w-100 tf-mini-cart-tool-close"
                     onClick={() => setOpenTool(-1)}
                   >
-                    Cancel
+                    Cancelar
                   </div>
                 </div>
               </form>
@@ -392,10 +314,10 @@ export default function CartModal() {
               />
               <form id="shipping-form" className="tf-mini-cart-tool-content">
                 <div className="tf-mini-cart-tool-text text-sm fw-medium">
-                  Shipping estimates
+                  Estimativa de entrega
                 </div>
                 <div className="field">
-                  <p className="text-sm">Country</p>
+                  <p className="text-sm">País</p>
                   <div className="tf-select">
                     <select
                       className="w-100"
@@ -404,13 +326,13 @@ export default function CartModal() {
                       data-default=""
                     >
                       <option
-                        value="Australia"
+                        value="Brasil"
                         data-provinetas='[["Australian Capital Territory","Australian Capital Territory"],["New South Wales","New South Wales"],["Northern Territory","Northern Territory"],["Queensland","Queensland"],["South Australia","South Australia"],["Tasmania","Tasmania"],["Victoria","Victoria"],["Western Australia","Western Australia"]]'
                       >
-                        Australia
+                        Brasil
                       </option>
-                      <option value="Austria" data-provinetas="[]">
-                        Austria
+                      <option value="Brasil" data-provinetas="[]">
+                        Argentina
                       </option>
                       <option value="Belgium" data-provinetas="[]">
                         Belgium

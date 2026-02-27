@@ -3,23 +3,19 @@ import { useContextElement } from "@/context/Context";
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import QuantitySelect from "../common/QuantitySelect";
-import { products1 } from "@/data/products";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
 
 import ProgressBarComponent from "../common/Progressbar";
 export default function Cartmodal3() {
   const [openTool, setOpenTool] = useState(-1);
   const {
     cartProducts,
-    setCartProducts,
     totalPrice,
-    setQuickViewItem,
+    removeFromCart,
     updateQuantity,
   } = useContextElement();
 
   const removeItem = (id) => {
-    setCartProducts((pre) => [...pre.filter((elm) => elm.id != id)]);
+    removeFromCart(id);
   };
 
   return (
@@ -29,58 +25,6 @@ export default function Cartmodal3() {
     >
       <div className="modal-dialog">
         <div className="modal-content">
-          <div className="also-like-product">
-            <div className="also-like-product-wrap">
-              {products1.slice(0, 3).map((product, i) => (
-                <div key={i} className="tf-mini-cart-item">
-                  <div className="tf-mini-cart-image">
-                    <Link to={`/product-detail/${product.id}`}>
-                      <img
-                        className="lazyload"
-                        alt="img-product"
-                        src={product.imgSrc}
-                        width={1000}
-                        height={1421}
-                      />
-                    </Link>
-                    <div className="on-sale-wrap text-xxs">
-                      <span className="on-sale-item">-20%</span>
-                    </div>
-                  </div>
-                  <div className="tf-mini-cart-info">
-                    <Link
-                      className="title link text-md fw-medium"
-                      to={`/product-detail/${product.id}`}
-                    >
-                      {product.title}
-                    </Link>
-                    <p className="price-wrap text-md fw-medium">
-                      <span
-                        className={`new-price ${
-                          product.oldPrice ? "text-primary" : ""
-                        } `}
-                      >
-                        ${product.price.toFixed(2)}
-                      </span>{" "}
-                      {product.oldPrice && (
-                        <span className="old-price text-decoration-line-through text-dark-1 text-sm">
-                          ${product.oldPrice.toFixed(2)}
-                        </span>
-                      )}
-                    </p>
-                    <a
-                      href="#quickView"
-                      data-bs-toggle="modal"
-                      onClick={() => setQuickViewItem(product)}
-                      className="tf-btn animate-btn bg-dark-2 justify-content-center btn-quickview"
-                    >
-                      Quick view
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
           <div className="popup-shopping-cart-main">
             <div className="popup-header">
               <span className="title">Shopping cart</span>
@@ -112,7 +56,7 @@ export default function Cartmodal3() {
                             className="tf-mini-cart-item file-delete"
                           >
                             <div className="tf-mini-cart-image">
-                              <Link to={`/product-detail/${product.id}`}>
+                              <Link to={`/perfume/${product.id}`}>
                                 <img
                                   className="lazyload"
                                   alt="img-product"
@@ -126,7 +70,7 @@ export default function Cartmodal3() {
                               <div className="d-flex justify-content-between">
                                 <Link
                                   className="title link text-md fw-medium"
-                                  to={`/product-detail/${product.id}`}
+                                  to={`/perfume/${product.id}`}
                                 >
                                   {product.title}
                                 </Link>
@@ -174,9 +118,9 @@ export default function Cartmodal3() {
                         cart!{" "}
                         <Link
                           className="tf-btn btn-dark2 animate-btn mt-3"
-                          href="/shop-default"
+                          to="/catalogo"
                         >
-                          Explore Products
+                          Ver catálogo
                         </Link>
                       </div>
                     )}

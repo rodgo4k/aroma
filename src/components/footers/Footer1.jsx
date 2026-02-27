@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-
 import { Link } from "react-router-dom";
+import { registerPromoAlert } from "@/api/promoAlert";
+
 export default function Footer1({
   paddingBottom = false,
   cloud = false,
@@ -11,6 +11,7 @@ export default function Footer1({
 }) {
   const [success, setSuccess] = useState(true);
   const [showMessage, setShowMessage] = useState(false);
+  const [loadingAlert, setLoadingAlert] = useState(false);
 
   const handleShowMessage = () => {
     setShowMessage(true);
@@ -19,31 +20,22 @@ export default function Footer1({
     }, 2000);
   };
 
-  const sendEmail = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
-    const email = e.target.email.value;
-
+  const sendAlert = async (e) => {
+    e.preventDefault();
+    const phone = e.target.number.value;
+    setLoadingAlert(true);
     try {
-      const response = await axios.post(
-        "https://express-brevomail.vercel.app/api/contacts",
-        {
-          email,
-        }
-      );
-
-      if ([200, 201].includes(response.status)) {
-        e.target.reset(); // Reset the form
-        setSuccess(true); // Set success state
-        handleShowMessage();
-      } else {
-        setSuccess(false); // Handle unexpected responses
-        handleShowMessage();
-      }
-    } catch (error) {
-      console.error("Error:", error.response?.data || "An error occurred");
-      setSuccess(false); // Set error state
+      await registerPromoAlert({ phone, country: "BR" });
+      e.target.reset();
+      setSuccess(true);
       handleShowMessage();
-      e.target.reset(); // Reset the form
+    } catch (error) {
+      console.error("Promo alert error:", error);
+      setSuccess(false);
+      handleShowMessage();
+      e.target.reset();
+    } finally {
+      setLoadingAlert(false);
     }
   };
   useEffect(() => {
@@ -204,7 +196,7 @@ export default function Footer1({
                     href="https://www.google.com/maps?q=15Yarranst,Punchbowl,NSW,Australia"
                     className="tf-btn btn-line-dark fw-normal"
                   >
-                    <span className="text-sm"> Get Direction </span>
+                    <span className="text-sm"> Entrar em contato </span>
                     <i className="icon-arrow-top-left fs-8" />
                   </a>
                 </div>
@@ -227,17 +219,16 @@ export default function Footer1({
                   >
                     {success ? (
                       <p style={{ color: "rgb(52, 168, 83)" }}>
-                        You have successfully subscribed.
+                        Alerta cadastrado com sucesso.
                       </p>
                     ) : (
-                      <p style={{ color: "red" }}>Something went wrong</p>
+                      <p style={{ color: "red" }}>
+                        Não foi possível salvar seu alerta. Tente novamente.
+                      </p>
                     )}
                   </div>
                   <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      sendEmail(e);
-                    }}
+                    onSubmit={sendAlert}
                     id="subscribe-form"
                     className="form-newsletter"
                   >
@@ -257,6 +248,7 @@ export default function Footer1({
                         <button
                           className="subscribe-button animate-btn"
                           type="submit"
+                          disabled={loadingAlert}
                         >
                           <svg
                             width={18}

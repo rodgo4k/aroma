@@ -1,24 +1,49 @@
 "use client";
 
+import { useState } from "react";
 import { iconFeatures } from "@/data/features";
-import { testimonials12 } from "@/data/testimonials";
 import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Link } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
 import QuantitySelect from "../common/QuantitySelect";
+import { getShippingEstimate } from "@/api/shipping";
 
 export default function ShopCart() {
   const {
     cartProducts,
-    setCartProducts,
     totalPrice,
-
     updateQuantity,
+    removeFromCart,
   } = useContextElement();
+  const [shippingCep, setShippingCep] = useState("");
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingResult, setShippingResult] = useState(null);
+  const [shippingError, setShippingError] = useState(null);
+
+  const handleShippingEstimate = async (e) => {
+    e.preventDefault();
+    const cep = shippingCep.replace(/\D/g, "").trim();
+    if (cep.length < 8) {
+      setShippingError("Informe um CEP válido (8 dígitos).");
+      setShippingResult(null);
+      return;
+    }
+    setShippingLoading(true);
+    setShippingError(null);
+    setShippingResult(null);
+    try {
+      const data = await getShippingEstimate({ cep });
+      setShippingResult(data);
+    } catch (err) {
+      setShippingError(err.message || "Erro ao estimar entrega.");
+    } finally {
+      setShippingLoading(false);
+    }
+  };
 
   const removeItem = (id) => {
-    setCartProducts((pre) => [...pre.filter((elm) => elm.id != id)]);
+    removeFromCart(id);
   };
 
   return (
@@ -32,9 +57,9 @@ export default function ShopCart() {
                   <table className="table-page-cart">
                     <thead>
                       <tr>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
+                        <th>Produto</th>
+                        <th>Preço</th>
+                        <th>Quantidade</th>
                         <th>Total</th>
                       </tr>
                     </thead>
@@ -43,7 +68,7 @@ export default function ShopCart() {
                         <tr key={i} className="tf-cart-item file-delete">
                           <td className="tf-cart-item_product">
                             <Link
-                              to={`/product-detail/${product.id}`}
+                              to={`/perfume/${product.id}`}
                               className="img-box"
                             >
                               <img
@@ -55,23 +80,23 @@ export default function ShopCart() {
                             </Link>
                             <div className="cart-info">
                               <Link
-                                to={`/product-detail/${product.id}`}
+                                to={`/perfume/${product.id}`}
                                 className="name text-md link fw-medium"
                               >
                                 {product.title}
                               </Link>
-                              <div className="variants">White / L</div>
+                              <div className="variants">{product.priceShort || ""}</div>
                               <span
                                 className="remove-cart link remove"
                                 onClick={() => removeItem(product.id)}
                               >
-                                Remove
+                                Remover
                               </span>
                             </div>
                           </td>
                           <td className="tf-cart-item_price text-center">
                             <span className="cart-price price-on-sale text-md fw-medium">
-                              ${product.price.toFixed(2)}
+                              {product.priceShort || (Number(product.price) != null ? `R$ ${Number(product.price).toFixed(2)}` : "—")}
                             </span>
                           </td>
                           <td
@@ -90,7 +115,9 @@ export default function ShopCart() {
                             data-cart-title="Total"
                           >
                             <div className="cart-total total-price text-md fw-medium">
-                              ${(product.price * product.quantity).toFixed(2)}
+                              {Number(product.price) != null && Number(product.price) > 0
+                                ? `R$ ${(Number(product.price) * product.quantity).toFixed(2)}`
+                                : product.priceShort ? `${product.priceShort} (×${product.quantity})` : "—"}
                             </div>
                           </td>
                         </tr>
@@ -99,35 +126,34 @@ export default function ShopCart() {
                   </table>
                 ) : (
                   <div className="p-4">
-                    Your Cart is empty. Start adding favorite products to cart!{" "}
+                    Seu carrinho está vazio. Adicione perfumes do catálogo!{" "}
                     <Link
                       className="tf-btn btn-dark2 animate-btn mt-3"
-                      href="/shop-default"
+                      to="/catalogo"
                     >
-                      Explore Products
+                      Ver catálogo
                     </Link>
                   </div>
                 )}
                 <div className="check-gift">
                   <input type="checkbox" className="tf-check" id="checkGift" />
                   <label htmlFor="checkGift" className="label text-dark-4">
-                    Add gift wrap. Only
-                    <span className="fw-medium">$10.00.</span> (You can choose
-                    or not)
+                    Adicionar papel de presente. Apenas
+                    <span className="fw-medium"> R$10.00.</span>
                   </label>
                 </div>
-                <div className="box-ip-discount">
+                <div className="box-ip-discount d-flex flex-column gap-2">
                   <input type="text" placeholder="Discount code" />
                   <button
                     type="button"
-                    className="tf-btn radius-6 btn-out-line-dark-2"
+                    className="tf-btn radius-6 btn-out-line-dark-2 align-self-start"
                   >
-                    Apply
+                    Aplicar
                   </button>
                 </div>
                 <div className="cart-note">
                   <label htmlFor="note" className="text-md fw-medium">
-                    Special instructions for seller
+                    Instruções especiais para o vendedor
                   </label>
                   <textarea id="note" defaultValue={""} />
                 </div>
@@ -184,34 +210,42 @@ export default function ShopCart() {
           </div>
           <div className="col-xl-4">
             <div className="tf-page-cart-sidebar">
-              <form className="cart-box shipping-cart-box">
+              <form className="cart-box shipping-cart-box" onSubmit={handleShippingEstimate}>
                 <div className="text-lg title fw-medium">
-                  Shipping estimates
+                  Estimativa de entrega
                 </div>
+                <p className="text-sm text-dark-4 mb-2">
+                  Envio via Correios (PAC). Informe seu CEP para ver o prazo e o valor do frete.
+                </p>
                 <fieldset className="field">
-                  <label htmlFor="country" className="text-sm">
-                    Country
+                  <label htmlFor="shipping-cep" className="text-sm">
+                    CEP
                   </label>
-                  <input type="text" id="country" placeholder="United State" />
-                </fieldset>
-                <fieldset className="field">
-                  <label htmlFor="state" className="text-sm">
-                    State/Provineta
-                  </label>
-                  <input type="text" id="state" placeholder="State/Provineta" />
-                </fieldset>
-                <fieldset className="field">
-                  <label htmlFor="code" className="text-sm">
-                    Zipcode
-                  </label>
-                  <input type="text" id="code" placeholder={41000} />
+                  <input
+                    type="text"
+                    id="shipping-cep"
+                    placeholder="00000-000"
+                    value={shippingCep}
+                    onChange={(e) => setShippingCep(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                    maxLength={8}
+                  />
                 </fieldset>
                 <button
-                  type="button"
+                  type="submit"
                   className="tf-btn btn-dark2 animate-btn w-100"
+                  disabled={shippingLoading}
                 >
-                  Estimate
+                  {shippingLoading ? "Calculando…" : "Estimar"}
                 </button>
+                {shippingError && (
+                  <p className="text-sm text-danger mt-2 mb-0">{shippingError}</p>
+                )}
+                {shippingResult && !shippingError && (
+                  <div className="mt-2 p-2 rounded bg-light text-sm">
+                    <p className="fw-medium mb-1">{shippingResult.mensagem}</p>
+                    <p className="mb-0 text-dark-4">Frete {shippingResult.servico}: {shippingResult.valorFormatado}</p>
+                  </div>
+                )}
               </form>
               <form
                 onSubmit={(e) => e.preventDefault()}
@@ -220,10 +254,10 @@ export default function ShopCart() {
                 <div className="cart-head">
                   <div className="total-discount text-xl fw-medium">
                     <span>Total:</span>
-                    <span className="total">${totalPrice.toFixed(2)} USD</span>
+                    <span className="total">R$ {totalPrice.toFixed(2)}</span>
                   </div>
                   <p className="text-sm text-dark-4">
-                    Taxes and shipping calculated at checkout
+                    Taxas e entrega calculadas no checkout
                   </p>
                 </div>
                 <div className="check-agree">
@@ -233,12 +267,12 @@ export default function ShopCart() {
                     id="check-agree"
                   />
                   <label htmlFor="check-agree" className="label text-dark-4">
-                    I agree with
+                    Concordo com os
                     <Link
                       to={`/term-and-condition`}
                       className="text-dark-4 fw-medium text-underline link"
                     >
-                      term and conditions
+                      termos e condições
                     </Link>
                   </label>
                 </div>
@@ -251,7 +285,7 @@ export default function ShopCart() {
                   </Link>
                 </div>
                 <div className="cart-imgtrust">
-                  <p className="text-center text-sm text-dark-1">We accept</p>
+                  <p className="text-center text-sm text-dark-1">Aceitamos</p>
                   <div className="cart-list-social">
                     <div className="payment-item">
                       <svg
@@ -378,6 +412,7 @@ export default function ShopCart() {
                   </div>
                 </div>
               </form>
+              {/* Card de depoimento comentado para não exibir na página do carrinho
               <div className="cart-box testimonial-cart-box">
                 <Swiper
                   dir="ltr"
@@ -434,6 +469,7 @@ export default function ShopCart() {
                   </div>
                 </Swiper>
               </div>
+              */}
             </div>
           </div>
         </div>

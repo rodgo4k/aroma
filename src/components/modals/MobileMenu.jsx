@@ -248,7 +248,7 @@ export default function MobileMenu() {
                   <Link
                     to="/painel"
                     className={`mb-menu-link ${
-                      pathname === "/painel" ? "menuActive" : ""
+                      pathname.startsWith("/painel") ? "menuActive" : ""
                     }`}
                   >
                     Painel de Controle

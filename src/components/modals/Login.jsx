@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { login as apiLogin, setStoredToken, getMe, getAuthGoogleUrl, getAuthFacebookUrl } from "@/api/auth";
 import { useContextElement } from "@/context/Context";
+import { COUNTRY_OPTIONS } from "@/constants/countries";
 
 export default function Login() {
   const { setUser } = useContextElement();
-  const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("BR");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -14,7 +16,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const data = await apiLogin({ email: email.trim(), password });
+      const data = await apiLogin({ phone: phone.trim().replace(/\s/g, ""), password, country });
       setStoredToken(data.token);
       try {
         const fullUser = await getMe();
@@ -23,7 +25,7 @@ export default function Login() {
         setUser(data.user);
       }
       document.querySelector("#login .icon-close-popup")?.click();
-      setEmail("");
+      setPhone("");
       setPassword("");
     } catch (err) {
       setError(err.message || "Erro ao fazer login");
@@ -54,12 +56,25 @@ export default function Login() {
               </div>
             )}
             <div>
+              <fieldset className="mb_12">
+                <label className="form-label text-sm text-main-2 mb-1">País</label>
+                <select
+                  className="form-select"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  aria-label="Código do país"
+                >
+                  {COUNTRY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.code}>{c.label}</option>
+                  ))}
+                </select>
+              </fieldset>
               <fieldset className="email mb_12">
                 <input
-                  type="email"
-                  placeholder="Email*"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="tel"
+                  placeholder="DDD + número (ex.: 11 99999-9999)*"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </fieldset>

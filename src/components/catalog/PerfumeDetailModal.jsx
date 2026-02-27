@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { getPerfumeDisplayData, getPerfumeAllImages } from "@/data/perfumes";
+import { useContextElement } from "@/context/Context";
 
 const MODAL_ID = "perfumeDetailModal";
 
-export default function PerfumeDetailModal({ perfume, onClose }) {
+export default function PerfumeDetailModal({ perfume, onClose, onEdit, onDelete }) {
   const modalRef = useRef(null);
   const cleanupRef = useRef(() => {});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [inWishlist, setInWishlist] = useState(false);
+  const { addToWishlist, removeFromWishlist, isAddedtoWishlist, wishListLoading } = useContextElement();
 
   useEffect(() => {
     if (!perfume) return;
@@ -40,6 +42,7 @@ export default function PerfumeDetailModal({ perfume, onClose }) {
   const variants = perfume.variants || [];
   const variantsWithPrice = variants.filter((v) => v.price_short != null || v.option0 != null);
   const mainImage = images[selectedImageIndex] || images[0];
+  const inWishlist = perfume?.id ? isAddedtoWishlist(perfume.id) : false;
 
   return (
     <div
@@ -147,26 +150,39 @@ export default function PerfumeDetailModal({ perfume, onClose }) {
                   </div>
                 )}
                 <div className="d-flex align-items-center gap-2 flex-wrap">
-                  <a
-                    href={d.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="subscribe-button tf-btn animate-btn bg-dark-2 btn-lg text-white text-decoration-none d-inline-flex align-items-center"
-                  >
-                    <span className="icon icon-cart2 me-2" />
-                    Adicionar ao carrinho
-                  </a>
-                  <button
-                    type="button"
-                    className={`tf-btn btn-out-line-dark2 btn-lg ${inWishlist ? "wishlist-btn-active" : ""}`}
-                    onClick={() => setInWishlist((v) => !v)}
-                    aria-label={inWishlist ? "Remover da lista de desejos" : "Adicionar à lista de desejos"}
-                  >
-                    <span
-                      className={`icon ${inWishlist ? "icon-heart3" : "icon-heart2"}`}
-                      style={{ fontSize: "1.25rem" }}
-                    />
-                  </button>
+                  {!(onEdit || onDelete) && (
+                    <>
+                      <Link to={`/perfume/${perfume.id}`} className="subscribe-button tf-btn animate-btn bg-dark-2 btn-lg text-white text-decoration-none d-inline-flex align-items-center">
+                        <span className="icon icon-cart2 me-2" />
+                        Ver na loja
+                      </Link>
+                      <button
+                        type="button"
+                        className={`tf-btn btn-out-line-dark2 btn-lg ${inWishlist ? "wishlist-btn-active" : ""}`}
+                        disabled={wishListLoading}
+                        onClick={async () => {
+                          if (!perfume?.id) return;
+                          if (inWishlist) await removeFromWishlist(perfume.id);
+                          else await addToWishlist(perfume.id);
+                        }}
+                        aria-label={inWishlist ? "Remover da lista de desejos" : "Adicionar à lista de desejos"}
+                      >
+                        {inWishlist ? (
+                          <svg className="wishlist-heart-filled" viewBox="0 0 24 24" fill="currentColor" width="1.25rem" height="1.25rem" aria-hidden>
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
+                        ) : (
+                          <span className="icon icon-heart2" style={{ fontSize: "1.25rem" }} />
+                        )}
+                      </button>
+                    </>
+                  )}
+                  {(onEdit || onDelete) && (
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                      {onEdit && <button type="button" className="subscribe-button tf-btn animate-btn bg-dark-2 btn-lg text-white" onClick={() => onEdit(perfume)}>Editar</button>}
+                      {onDelete && <button type="button" className="tf-btn btn-out-line-dark2 btn-lg border-danger text-danger" onClick={() => onDelete(perfume)}>Excluir</button>}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

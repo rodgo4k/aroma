@@ -135,8 +135,13 @@
   }
 }
 
-// Botão lista de desejos no modal: coração preenchido vermelho quando ativo
+// Botão lista de desejos: coração totalmente preenchido vermelho quando ativo
 .wishlist-btn-active .icon {
   color: var(--bs-danger) !important;
   -webkit-text-fill-color: var(--bs-danger);
+  -webkit-text-stroke-width: 0;
+}
+.wishlist-btn-active .wishlist-heart-filled {
+  color: var(--bs-danger);
+  fill: var(--bs-danger);
 }

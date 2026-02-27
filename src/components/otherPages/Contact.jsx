@@ -1,64 +1,95 @@
-import React from "react";
+import React, { useState } from "react";
+import { sendContactMessage } from "@/api/contact";
 
 export default function Contact() {
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  const handleChange = (field, value) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setSubmitting(true);
+    try {
+      await sendContactMessage({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        message: form.message.trim(),
+      });
+      setSuccess("Mensagem enviada com sucesso! Em breve entraremos em contato.");
+      setForm({ name: "", email: "", message: "" });
+    } catch (err) {
+      setError(err.message || "Erro ao enviar mensagem. Tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section className="s-contact flat-spacing-13">
       <div className="container">
-        <div className="row">
+        <div className="row mb-4 mb-lg-5">
           <div className="col-lg-12">
-            <div className="wg-map">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d27294.62418958524!2d151.25730233429948!3d-33.82005608618041!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6b12ab8bc95a137f%3A0x358f04a7f6f5f6a6!2sGrotto%20Point%20Lighthouse!5e0!3m2!1sen!2s!4v1733976867160!5m2!1sen!2s"
-                className="map"
-                style={{ border: "none" }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
+            <div className="position-relative overflow-hidden rounded-4">
+              <img
+                src="/images/banner/fashion-1.jpg"
+                alt="Contato Aroma"
+                className="w-100"
+                style={{ maxHeight: 400, objectFit: "cover" }}
               />
             </div>
           </div>
-          <div className="col-lg-6">
+          <div className="col-lg-6 mt-4 mt-lg-5">
             <div className="content-left">
-              <div className="title fw-medium display-md-2">Contact Us</div>
+              <div className="title fw-medium display-md-2">Fale com a gente</div>
               <p className="sub-title text-main">
-                Have a question? Please contact us using the customer support
-                <br />
-                channels below.
+                Tem alguma dúvida sobre perfumes, pedidos ou parcerias? Entre em
+                contato com a equipe Aroma pelos canais abaixo.
               </p>
               <ul className="contact-list">
                 <li>
                   <p>
-                    Address:{" "}
+                    Endereço:{" "}
+                    <span className="text-main">
+                      Feira de Santana - BA (envios para todo o Brasil)
+                    </span>
+                  </p>
+                </li>
+                <li>
+                  <p>
+                    WhatsApp:{" "}
                     <a
                       className="link"
-                      href="https://www.google.com/maps?q=15Yarranst,Punchbowl,NSW,Australia"
+                      href="https://wa.me/5575999997821"
                       target="_blank"
+                      rel="noreferrer"
                     >
-                      15 Yarran st, Punchbowl, NSW, Australia
+                      (75) 99999-7821
                     </a>
                   </p>
                 </li>
                 <li>
                   <p>
-                    Phone number:{" "}
-                    <a className="link" href="tel:123456">
-                      {" "}
-                      +1 234 567{" "}
+                    E-mail:{" "}
+                    <a className="link" href="mailto:contato@aromaexpresso.com">
+                      contato@aromaexpresso.com
                     </a>
                   </p>
                 </li>
                 <li>
                   <p>
-                    Email:{" "}
-                    <a className="link" href="mailto:contact@vineta.com">
-                      contact@vineta.com
-                    </a>
-                  </p>
-                </li>
-                <li>
-                  <p>
-                    Open:{" "}
-                    <span className="text-main"> 8am - 7pm, Mon - Sat </span>
+                    Horário de atendimento:{" "}
+                    <span className="text-main">
+                      Segunda a Sexta, das 9h às 18h
+                    </span>
                   </p>
                 </li>
               </ul>
@@ -95,40 +126,62 @@ export default function Contact() {
               </ul>
             </div>
           </div>
-          <div className="col-lg-6">
+          <div className="col-lg-6 mt-4 mt-lg-5">
             <div className="content-right">
-              <div className="title fw-medium display-md-2">Get In Touch</div>
+              <div className="title fw-medium display-md-2">
+                Envie uma mensagem
+              </div>
               <p className="sub-title text-main">
-                Please submit&nbsp;all general enquiries&nbsp;in the contact
-                form below and we look forward to hearing from you soon.
+                Preencha o formulário abaixo e retornaremos o mais rápido
+                possível.
               </p>
               <div className="form-contact-wrap">
-                <form action="#" className="form-default">
+                <form className="form-default" onSubmit={handleSubmit}>
                   <div className="wrap">
+                    {error && (
+                      <p className="text-danger small mb-2">{error}</p>
+                    )}
+                    {success && (
+                      <p className="text-success small mb-2">{success}</p>
+                    )}
                     <div className="cols">
                       <fieldset>
-                        <label htmlFor="username">Your name*</label>
+                        <label htmlFor="username">Seu nome*</label>
                         <input
                           id="username"
                           type="text"
                           name="username"
+                          value={form.name}
+                          onChange={(e) => handleChange("name", e.target.value)}
                           required
                         />
                       </fieldset>
                       <fieldset>
-                        <label htmlFor="email">Your email*</label>
-                        <input id="email" type="email" name="email" required />
+                        <label htmlFor="email">Seu e-mail*</label>
+                        <input
+                          id="email"
+                          type="email"
+                          name="email"
+                          value={form.email}
+                          onChange={(e) => handleChange("email", e.target.value)}
+                          required
+                        />
                       </fieldset>
                     </div>
                     <div className="cols">
                       <fieldset className="textarea">
-                        <label htmlFor="mess">Message</label>
-                        <textarea id="mess" required defaultValue={""} />
+                        <label htmlFor="mess">Mensagem</label>
+                        <textarea
+                          id="mess"
+                          required
+                          value={form.message}
+                          onChange={(e) => handleChange("message", e.target.value)}
+                        />
                       </fieldset>
                     </div>
                     <div className="button-submit">
-                      <button className="tf-btn animate-btn" type="submit">
-                        Send
+                      <button className="tf-btn animate-btn" type="submit" disabled={submitting}>
+                        {submitting ? "Enviando..." : "Enviar mensagem"}
                       </button>
                     </div>
                   </div>

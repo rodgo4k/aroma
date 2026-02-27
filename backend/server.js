@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import nodemailer from "nodemailer";
 import { put } from "@vercel/blob";
 import { sql } from "./lib/db.js";
 import {
@@ -9,6 +10,7 @@ import {
   getBearerToken,
   verifyToken,
 } from "./lib/auth.js";
+import { normalizePhone } from "./lib/phone.js";
 
 const MAX_AVATAR_SIZE = 4 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -19,8 +21,174 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+function getMailTransport() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+}
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Backend Aroma" });
+});
+
+app.post("/api/contact", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const email = typeof body.email === "string" ? body.email.trim() : "";
+    const message = typeof body.message === "string" ? body.message.trim() : "";
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: "Nome, e-mail e mensagem são obrigatórios." });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "E-mail inválido." });
+    }
+    const transport = getMailTransport();
+    if (!transport) {
+      return res.status(503).json({ error: "Envio de e-mail não está configurado no servidor." });
+    }
+    const to = (process.env.CONTACT_TO_EMAIL || "contato@aromaexpresso.com").trim();
+    const from = (process.env.SMTP_FROM || process.env.SMTP_USER || "no-reply@aromaexpresso.com").trim();
+    const subject = `Contato do site Aroma - ${name}`;
+    const text = `Nova mensagem de contato do site Aroma:
+
+Nome: ${name}
+E-mail: ${email}
+
+Mensagem:
+${message}
+`;
+    const html = `<p><strong>Nova mensagem de contato do site Aroma</strong></p>
+                  <p><strong>Nome:</strong> ${name}</p>
+                  <p><strong>E-mail:</strong> ${email}</p>
+                  <p><strong>Mensagem:</strong><br/>${message.replace(/\n/g, "<br/>")}</p>`;
+
+    await transport.sendMail({ from, to, subject, text, html });
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("POST /api/contact error:", err);
+    return res.status(500).json({ error: "Erro ao enviar mensagem. Tente novamente mais tarde." });
+  }
+});
+
+app.post("/api/promo-alert", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const body = req.body || {};
+    const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
+    const country = typeof body.country === "string" && body.country.trim()
+      ? body.country.trim().toUpperCase().slice(0, 2)
+      : "BR";
+    if (!rawPhone) {
+      return res.status(400).json({ error: "Número de telefone é obrigatório." });
+    }
+    let phoneE164;
+    try {
+      phoneE164 = normalizePhone(rawPhone, country);
+    } catch (err) {
+      return res.status(400).json({ error: err.message || "Telefone inválido" });
+    }
+
+    let userId = null;
+    try {
+      const [user] = await sql`SELECT id FROM users WHERE phone = ${phoneE164}`;
+      if (user) userId = user.id;
+    } catch {
+      // Se a coluna phone não existir (schema antigo), apenas ignora o vínculo de usuário.
+    }
+
+    const [row] = await sql`
+      INSERT INTO promo_alerts (user_phone, user_id)
+      VALUES (${phoneE164}, ${userId})
+      ON CONFLICT (user_phone)
+      DO UPDATE SET
+        user_id = COALESCE(promo_alerts.user_id, EXCLUDED.user_id),
+        updated_at = now()
+      RETURNING id, user_phone, user_id, created_at, updated_at
+    `;
+
+    return res.status(200).json({
+      ok: true,
+      alert: {
+        id: row.id,
+        phone: row.user_phone,
+        user_id: row.user_id ?? null,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      },
+    });
+  } catch (err) {
+    console.error("POST /api/promo-alert error:", err);
+    return res.status(500).json({ error: "Erro ao registrar alerta de promoções." });
+  }
+});
+
+// Estimativa de entrega Correios (PAC) — envio normal
+app.post("/api/shipping-estimate", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const cepDestino = String(body.cep || body.cepDestino || "").replace(/\D/g, "").slice(0, 8);
+    if (cepDestino.length < 8) {
+      return res.status(400).json({ error: "CEP inválido. Informe 8 dígitos." });
+    }
+    const cepOrigem = (process.env.CORREIOS_CEP_ORIGEM || "01310100").replace(/\D/g, "").slice(0, 8);
+    const pesoKg = (body.peso != null && body.peso !== "") ? String(Math.max(0.1, Number(body.peso) || 1)) : "1";
+    let calcularPrecoPrazo;
+    try {
+      const correios = await import("correios-brasil");
+      calcularPrecoPrazo = correios.calcularPrecoPrazo ?? correios.default?.calcularPrecoPrazo;
+    } catch (e) {
+      console.error("correios-brasil not available:", e.message);
+      return res.status(503).json({ error: "Serviço de estimativa de entrega indisponível." });
+    }
+    if (typeof calcularPrecoPrazo !== "function") {
+      return res.status(503).json({ error: "Serviço de estimativa de entrega indisponível." });
+    }
+    const args = {
+      sCepOrigem: cepOrigem,
+      sCepDestino: cepDestino,
+      nVlPeso: pesoKg,
+      nCdFormato: 1,
+      nVlComprimento: 20,
+      nVlAltura: 20,
+      nVlLargura: 20,
+      nVlDiametro: 0,
+      nCdServico: ["04510"],
+    };
+    const result = await calcularPrecoPrazo(args);
+    const item = Array.isArray(result) ? result[0] : result;
+    if (!item) {
+      return res.status(400).json({ error: "Não foi possível calcular o prazo para este CEP." });
+    }
+    const prazoDias = parseInt(item.PrazoEntrega, 10) || 0;
+    const valorStr = (item.Valor || "0").replace(",", ".");
+    const valor = parseFloat(valorStr) || 0;
+    if (prazoDias <= 0 && valor <= 0) {
+      const msg = item.MsgErro || "Não foi possível calcular o prazo para este CEP.";
+      return res.status(400).json({ error: msg });
+    }
+    return res.status(200).json({
+      servico: "PAC",
+      prazoDias,
+      valor,
+      valorFormatado: `R$ ${valor.toFixed(2).replace(".", ",")}`,
+      mensagem: prazoDias > 0
+        ? `Entrega em até ${prazoDias} dias úteis`
+        : "Consulte o prazo no checkout.",
+    });
+  } catch (err) {
+    console.error("POST /api/shipping-estimate error:", err);
+    return res.status(500).json({ error: "Erro ao calcular estimativa de entrega. Tente novamente." });
+  }
 });
 
 // Proxy de imagens do Blob (evita 403 no browser quando o store é privado)
@@ -68,24 +236,66 @@ function toUuidKey(val) {
 }
 
 // Catálogo de perfumes (do banco) — imagens vêm da tabela perfume_images (perfume_id → url)
+// ?catalog=arabe|feminino|normal | ?all=1 (admin: lista todos, inclusive inativos)
 app.get("/api/perfumes", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const catalog = typeof req.query.catalog === "string" ? req.query.catalog.trim() : null;
+    const allParam = req.query.all === "1" || req.query.all === "true";
+    let onlyActive = true;
+    if (allParam) {
+      const payload = await requireAdmin(req, res);
+      if (!payload) return;
+      onlyActive = false;
+    }
     let rows;
-    if (catalog && ["arabe", "feminino", "normal"].includes(catalog)) {
-      rows = await sql`
-        SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
-        FROM perfumes p
-        WHERE p.catalog_source = ${catalog}
-        ORDER BY p.title
-      `;
-    } else {
-      rows = await sql`
-        SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
-        FROM perfumes
-        ORDER BY catalog_source, title
-      `;
+    try {
+      if (catalog && ["arabe", "feminino", "normal"].includes(catalog)) {
+        rows = onlyActive
+          ? await sql`
+              SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado
+              FROM perfumes p
+              WHERE p.catalog_source = ${catalog} AND COALESCE(p.ativo, true) = true
+              ORDER BY p.title
+            `
+          : await sql`
+              SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado
+              FROM perfumes p
+              WHERE p.catalog_source = ${catalog}
+              ORDER BY p.title
+            `;
+      } else {
+        rows = onlyActive
+          ? await sql`
+              SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url, ativo, esgotado
+              FROM perfumes
+              WHERE COALESCE(ativo, true) = true
+              ORDER BY catalog_source, title
+            `
+          : await sql`
+              SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url, ativo, esgotado
+              FROM perfumes
+              ORDER BY catalog_source, title
+            `;
+      }
+    } catch (queryErr) {
+      // Retrocompatibilidade: se as colunas ativo/esgotado ainda não existem (migration 009 não aplicada),
+      // refaz a query sem esses campos e sem filtro de ativo.
+      if (queryErr?.code !== "42703") throw queryErr;
+      if (catalog && ["arabe", "feminino", "normal"].includes(catalog)) {
+        rows = await sql`
+          SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
+          FROM perfumes p
+          WHERE p.catalog_source = ${catalog}
+          ORDER BY p.title
+        `;
+      } else {
+        rows = await sql`
+          SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
+          FROM perfumes
+          ORDER BY catalog_source, title
+        `;
+      }
     }
     const idSet = new Set(rows.map((r) => toUuidKey(r.id)).filter(Boolean));
     const allImages = await sql`SELECT perfume_id, url, position FROM perfume_images ORDER BY perfume_id, position`;
@@ -129,6 +339,8 @@ app.get("/api/perfumes", async (req, res) => {
         notes: p.notes ?? {},
         variants: p.variants ?? [],
         images,
+        ativo: p.ativo === true || p.ativo == null,
+        esgotado: p.esgotado === true,
       };
     });
     return res.status(200).json(list);
@@ -142,11 +354,25 @@ app.get("/api/perfumes/:id", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
     const id = req.params.id;
-    const [p] = await sql`
-      SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
-      FROM perfumes WHERE id = ${id}
-    `;
+    let p;
+    try {
+      [p] = await sql`
+        SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url, ativo, esgotado
+        FROM perfumes WHERE id = ${id}
+      `;
+    } catch (queryErr) {
+      if (queryErr?.code !== "42703") throw queryErr;
+      [p] = await sql`
+        SELECT id, external_url, title, description, catalog_source, notes, variants, image_2_url
+        FROM perfumes WHERE id = ${id}
+      `;
+    }
     if (!p) return res.status(404).json({ error: "Perfume não encontrado" });
+    const isActive = p.ativo === true || p.ativo == null;
+    if (!isActive) {
+      const payload = await requireAdmin(req, res);
+      if (!payload) return res.status(404).json({ error: "Perfume não encontrado" });
+    }
     const imgRows = await sql`
       SELECT url, position FROM perfume_images WHERE perfume_id = ${id} ORDER BY position
     `;
@@ -170,10 +396,297 @@ app.get("/api/perfumes/:id", async (req, res) => {
       notes: p.notes ?? {},
       variants: p.variants ?? [],
       images,
+      ativo: p.ativo === true || p.ativo == null,
+      esgotado: p.esgotado === true,
     });
   } catch (err) {
     console.error("GET /api/perfumes/:id error:", err);
     return res.status(500).json({ error: "Erro ao buscar perfume" });
+  }
+});
+
+async function requireAdmin(req, res) {
+  const token = getBearerToken(req);
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
+    res.status(401).json({ error: "Token inválido ou expirado" });
+    return null;
+  }
+  if (!sql) {
+    res.status(503).json({ error: "Banco de dados não configurado" });
+    return null;
+  }
+  const rows = await sql`SELECT role FROM users WHERE id = ${payload.userId}`;
+  const user = rows?.[0];
+  if (!user) {
+    res.status(403).json({ error: "Usuário não encontrado" });
+    return null;
+  }
+  const role = (user.role || "user").toString().toLowerCase();
+  if (role !== "admin") {
+    res.status(403).json({ error: "Acesso negado. Apenas administradores." });
+    return null;
+  }
+  return payload;
+}
+
+app.post("/api/perfumes", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const body = req.body || {};
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    let externalUrl = typeof body.external_url === "string" ? body.external_url.trim() : (typeof body.url === "string" ? body.url.trim() : "");
+    const catalogSource = typeof body.catalog_source === "string" ? body.catalog_source.trim() : "";
+    if (!title) return res.status(400).json({ error: "Título é obrigatório" });
+    if (!externalUrl) externalUrl = null;
+    if (!["arabe", "feminino", "normal"].includes(catalogSource)) {
+      return res.status(400).json({ error: "Catálogo deve ser: arabe, feminino ou normal" });
+    }
+    const description = typeof body.description === "string" ? body.description.trim() || null : null;
+    const notes = body.notes && typeof body.notes === "object" ? body.notes : {};
+    const variants = Array.isArray(body.variants) ? body.variants : [];
+    const rawImages = Array.isArray(body.images) ? body.images : [];
+    const images = rawImages.map((u) => (typeof u === "string" ? u.trim() : "")).filter(Boolean);
+    const ativo = body.ativo !== false && body.ativo !== "false";
+    const esgotado = body.esgotado === true || body.esgotado === "true";
+
+    const [inserted] = await sql`
+      INSERT INTO perfumes (external_url, title, description, catalog_source, notes, variants, ativo, esgotado)
+      VALUES (${externalUrl}, ${title}, ${description}, ${catalogSource}, ${JSON.stringify(notes)}, ${JSON.stringify(variants)}, ${ativo}, ${esgotado})
+      RETURNING id, external_url, title, description, catalog_source, notes, variants, ativo, esgotado
+    `;
+    if (!inserted) return res.status(500).json({ error: "Erro ao criar perfume" });
+    const perfumeId = inserted.id;
+    for (let i = 0; i < images.length; i++) {
+      await sql`INSERT INTO perfume_images (perfume_id, url, position) VALUES (${perfumeId}, ${images[i]}, ${i})`;
+    }
+    const imgRows = await sql`SELECT url, position FROM perfume_images WHERE perfume_id = ${perfumeId} ORDER BY position`;
+    const imagesList = (imgRows || []).map((i) => (i.url != null ? String(i.url).trim() : "")).filter(Boolean);
+    return res.status(201).json({
+      id: inserted.id,
+      url: inserted.external_url,
+      title: inserted.title,
+      description: inserted.description ?? "",
+      catalogSource: inserted.catalog_source,
+      notes: inserted.notes ?? {},
+      variants: inserted.variants ?? [],
+      images: imagesList,
+      ativo: inserted.ativo !== false,
+      esgotado: inserted.esgotado === true,
+    });
+  } catch (err) {
+    if (err?.code === "23505") return res.status(409).json({ error: "Já existe um perfume com esta URL externa" });
+    console.error("POST /api/perfumes error:", err);
+    return res.status(500).json({ error: "Erro ao criar perfume" });
+  }
+});
+
+app.put("/api/perfumes/:id", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const id = req.params.id;
+    const [existing] = await sql`SELECT id FROM perfumes WHERE id = ${id}`;
+    if (!existing) return res.status(404).json({ error: "Perfume não encontrado" });
+    const body = req.body || {};
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    let externalUrl = typeof body.external_url === "string" ? body.external_url.trim() : (typeof body.url === "string" ? body.url.trim() : "");
+    const catalogSource = typeof body.catalog_source === "string" ? body.catalog_source.trim() : "";
+    if (!title) return res.status(400).json({ error: "Título é obrigatório" });
+    if (!externalUrl) externalUrl = null;
+    if (!["arabe", "feminino", "normal"].includes(catalogSource)) {
+      return res.status(400).json({ error: "Catálogo deve ser: arabe, feminino ou normal" });
+    }
+    const description = typeof body.description === "string" ? body.description.trim() || null : null;
+    const notes = body.notes && typeof body.notes === "object" ? body.notes : {};
+    const variants = Array.isArray(body.variants) ? body.variants : [];
+    const rawImagesPut = Array.isArray(body.images) ? body.images : [];
+    const images = rawImagesPut.map((u) => (typeof u === "string" ? u.trim() : "")).filter(Boolean);
+    const ativo = body.ativo !== false && body.ativo !== "false";
+    const esgotado = body.esgotado === true || body.esgotado === "true";
+
+    await sql`
+      UPDATE perfumes
+      SET external_url = ${externalUrl}, title = ${title}, description = ${description}, catalog_source = ${catalogSource}, notes = ${JSON.stringify(notes)}, variants = ${JSON.stringify(variants)}, ativo = ${ativo}, esgotado = ${esgotado}, updated_at = now()
+      WHERE id = ${id}
+    `;
+    await sql`DELETE FROM perfume_images WHERE perfume_id = ${id}`;
+    for (let i = 0; i < images.length; i++) {
+      await sql`INSERT INTO perfume_images (perfume_id, url, position) VALUES (${id}, ${images[i]}, ${i})`;
+    }
+    const [p] = await sql`SELECT id, external_url, title, description, catalog_source, notes, variants, ativo, esgotado FROM perfumes WHERE id = ${id}`;
+    const imgRows = await sql`SELECT url, position FROM perfume_images WHERE perfume_id = ${id} ORDER BY position`;
+    const imagesList = (imgRows || []).map((i) => (i.url != null ? String(i.url).trim() : "")).filter(Boolean);
+    return res.status(200).json({
+      id: p.id,
+      url: p.external_url,
+      title: p.title,
+      description: p.description ?? "",
+      catalogSource: p.catalog_source,
+      notes: p.notes ?? {},
+      variants: p.variants ?? [],
+      images: imagesList,
+      ativo: p.ativo !== false,
+      esgotado: p.esgotado === true,
+    });
+  } catch (err) {
+    if (err?.code === "23505") return res.status(409).json({ error: "Já existe um perfume com esta URL externa" });
+    console.error("PUT /api/perfumes/:id error:", err);
+    return res.status(500).json({ error: "Erro ao atualizar perfume" });
+  }
+});
+
+app.delete("/api/perfumes/:id", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const id = req.params.id;
+    const [existing] = await sql`SELECT id FROM perfumes WHERE id = ${id}`;
+    if (!existing) return res.status(404).json({ error: "Perfume não encontrado" });
+    await sql`DELETE FROM perfume_images WHERE perfume_id = ${id}`;
+    await sql`DELETE FROM perfumes WHERE id = ${id}`;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/perfumes/:id error:", err);
+    return res.status(500).json({ error: "Erro ao excluir perfume" });
+  }
+});
+
+app.get("/api/admin/users", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    let rows;
+    try {
+      rows = await sql`
+        SELECT id, email, name, phone, role, created_at, updated_at, last_activity_at
+        FROM users ORDER BY created_at DESC
+      `;
+    } catch (schemaErr) {
+      if (schemaErr?.code !== "42703") throw schemaErr;
+      rows = await sql`
+        SELECT id, email, name, phone, role, created_at, updated_at
+        FROM users ORDER BY created_at DESC
+      `;
+    }
+    const list = (rows || []).map((u) => ({
+      id: u.id,
+      email: u.email ?? null,
+      phone: u.phone ?? null,
+      name: u.name ?? null,
+      role: u.role ?? "user",
+      created_at: u.created_at,
+      updated_at: u.updated_at ?? u.created_at,
+      last_activity_at: u.last_activity_at ?? u.updated_at ?? u.created_at,
+    }));
+    return res.status(200).json(list);
+  } catch (err) {
+    console.error("GET /api/admin/users error:", err);
+    return res.status(500).json({ error: "Erro ao listar usuários" });
+  }
+});
+
+app.get("/api/admin/access-info", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  const proto = req.get("x-forwarded-proto") || req.protocol || "http";
+  const host = req.get("x-forwarded-host") || req.get("host") || "";
+  const baseUrl = host ? `${proto}://${host}` : "";
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  return res.status(200).json({
+    deployment_url: vercelUrl || baseUrl || null,
+    api_url: baseUrl ? `${baseUrl}/api` : null,
+    note: "Dados de deploy e variáveis sensíveis estão no dashboard da Vercel (Project Settings > Environment Variables).",
+  });
+});
+
+app.get("/api/admin/users/:id", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "ID do usuário é obrigatório" });
+  try {
+    let rows;
+    try {
+      rows = await sql`
+        SELECT id, email, name, avatar_url, birth_date, city, state, country,
+               phone, role, created_at, updated_at, last_activity_at
+        FROM users WHERE id = ${id}
+      `;
+    } catch (schemaErr) {
+      if (schemaErr?.code !== "42703") throw schemaErr;
+      rows = await sql`
+        SELECT id, email, name, created_at, updated_at
+        FROM users WHERE id = ${id}
+      `;
+      if (rows.length > 0) {
+        rows[0].avatar_url = null;
+        rows[0].birth_date = null;
+        rows[0].city = null;
+        rows[0].state = null;
+        rows[0].country = null;
+        rows[0].phone = null;
+        rows[0].role = "user";
+        rows[0].last_activity_at = rows[0].updated_at;
+      }
+    }
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+    const u = rows[0];
+    return res.status(200).json({
+      user: {
+        id: u.id,
+        email: u.email ?? null,
+        name: u.name ?? null,
+        avatar_url: u.avatar_url ?? null,
+        birth_date: u.birth_date ?? null,
+        city: u.city ?? null,
+        state: u.state ?? null,
+        country: u.country ?? null,
+        phone: u.phone ?? null,
+        role: u.role ?? "user",
+        created_at: u.created_at,
+        updated_at: u.updated_at ?? u.created_at,
+        last_activity_at: u.last_activity_at ?? u.updated_at ?? u.created_at,
+      },
+    });
+  } catch (err) {
+    console.error("GET /api/admin/users/:id error:", err);
+    return res.status(500).json({ error: "Erro ao buscar usuário" });
+  }
+});
+
+app.post("/api/admin/users/:id/make-admin", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ error: "ID do usuário é obrigatório" });
+  try {
+    const [current] = await sql`
+      SELECT id, role FROM users WHERE id = ${id}
+    `;
+    if (!current) return res.status(404).json({ error: "Usuário não encontrado" });
+    const currentRole = (current.role || "user").toString().toLowerCase();
+    if (currentRole === "admin") {
+      return res.status(200).json({ ok: true, id, role: "admin", changed: false });
+    }
+    await sql`
+      UPDATE users
+      SET role = 'admin', updated_at = now()
+      WHERE id = ${id}
+    `;
+    return res.status(200).json({ ok: true, id, role: "admin", changed: true });
+  } catch (err) {
+    console.error("POST /api/admin/users/:id/make-admin error:", err);
+    return res.status(500).json({ error: "Erro ao tornar usuário administrador" });
   }
 });
 
@@ -294,31 +807,47 @@ app.get("/api/auth-facebook-callback", async (req, res) => {
 app.post("/api/register", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
-    const { email, password, name } = req.body || {};
-    const emailTrim = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const { phone, password, name, email, country } = req.body || {};
     const passwordStr = typeof password === "string" ? password : "";
-    if (!emailTrim || !passwordStr) {
-      return res.status(400).json({ error: "Email e senha são obrigatórios" });
+    const emailTrim = typeof email === "string" ? email.trim().toLowerCase() || null : null;
+    const countryCode = typeof country === "string" && country.trim() ? country.trim().toUpperCase().slice(0, 2) : "BR";
+    if (!phone || !passwordStr) {
+      return res.status(400).json({ error: "Telefone e senha são obrigatórios" });
     }
     if (passwordStr.length < 6) {
       return res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres" });
     }
-    const existing = await sql`SELECT id FROM users WHERE email = ${emailTrim}`;
+    let phoneE164;
+    try {
+      phoneE164 = normalizePhone(phone, countryCode);
+    } catch (err) {
+      return res.status(400).json({ error: err.message || "Telefone inválido" });
+    }
+    const existing = await sql`SELECT id FROM users WHERE phone = ${phoneE164}`;
     if (existing.length > 0) {
-      return res.status(409).json({ error: "Este email já está em uso" });
+      return res.status(409).json({ error: "Este telefone já está em uso" });
     }
     const password_hash = await hashPassword(passwordStr);
     const [user] = await sql`
-      INSERT INTO users (email, password_hash, name)
-      VALUES (${emailTrim}, ${password_hash}, ${name?.trim() || null})
-      RETURNING id, email, name, created_at
+      INSERT INTO users (phone, password_hash, name, email)
+      VALUES (${phoneE164}, ${password_hash}, ${name?.trim() || null}, ${emailTrim})
+      RETURNING id, phone, email, name, created_at
     `;
-    const token = signToken({ userId: user.id, email: user.email });
+    await sql`
+      INSERT INTO carts (user_phone) VALUES (${user.phone})
+      ON CONFLICT (user_phone) DO NOTHING
+    `;
+    await sql`
+      INSERT INTO wishlists (user_phone) VALUES (${user.phone})
+      ON CONFLICT (user_phone) DO NOTHING
+    `;
+    const token = signToken({ userId: user.id });
     return res.status(201).json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, phone: user.phone, email: user.email ?? null, name: user.name },
       token,
     });
   } catch (err) {
+    if (err?.code === "23505") return res.status(409).json({ error: "Este telefone já está em uso" });
     console.error("Register error:", err);
     return res.status(500).json({ error: "Erro ao criar conta" });
   }
@@ -327,27 +856,63 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
-    const { email, password } = req.body || {};
-    const emailTrim = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const { phone, password, country } = req.body || {};
     const passwordStr = typeof password === "string" ? password : "";
-    if (!emailTrim || !passwordStr) {
-      return res.status(400).json({ error: "Email e senha são obrigatórios" });
+    const countryCode = typeof country === "string" && country.trim() ? country.trim().toUpperCase().slice(0, 2) : "BR";
+    const phoneRaw = typeof phone === "string" ? phone.trim().replace(/\s/g, "") : "";
+    if (!phoneRaw || !passwordStr) {
+      return res.status(400).json({ error: "Telefone e senha são obrigatórios" });
     }
-    const rows = await sql`
-      SELECT id, email, name, password_hash, role FROM users WHERE email = ${emailTrim}
+    let phoneE164;
+    try {
+      phoneE164 = normalizePhone(phone, countryCode);
+    } catch (err) {
+      return res.status(400).json({ error: err.message || "Telefone inválido" });
+    }
+    let rows = await sql`
+      SELECT id, email, name, phone, password_hash, role FROM users WHERE phone = ${phoneE164}
     `;
+    if (rows.length === 0 && phoneRaw !== phoneE164) {
+      rows = await sql`
+        SELECT id, email, name, phone, password_hash, role FROM users WHERE phone = ${phoneRaw}
+      `;
+      if (rows.length > 0) {
+        await sql`UPDATE users SET phone = ${phoneE164} WHERE id = ${rows[0].id}`;
+        await sql`UPDATE carts SET user_phone = ${phoneE164} WHERE user_phone = ${phoneRaw}`;
+        await sql`UPDATE wishlists SET user_phone = ${phoneE164} WHERE user_phone = ${phoneRaw}`;
+        await sql`
+          INSERT INTO carts (user_phone) VALUES (${phoneE164})
+          ON CONFLICT (user_phone) DO NOTHING
+        `;
+        await sql`
+          INSERT INTO wishlists (user_phone) VALUES (${phoneE164})
+          ON CONFLICT (user_phone) DO NOTHING
+        `;
+        rows[0].phone = phoneE164;
+      }
+    }
     if (rows.length === 0) {
-      return res.status(401).json({ error: "Email ou senha incorretos" });
+      return res.status(401).json({ error: "Telefone ou senha incorretos" });
     }
     const user = rows[0];
     if (!user.password_hash) {
       return res.status(401).json({ error: "Esta conta usa login com Google ou Facebook." });
     }
     const valid = await verifyPassword(passwordStr, user.password_hash);
-    if (!valid) return res.status(401).json({ error: "Email ou senha incorretos" });
-    const token = signToken({ userId: user.id, email: user.email });
+    if (!valid) return res.status(401).json({ error: "Telefone ou senha incorretos" });
+
+    // Atualiza última atividade no momento do login (se a coluna existir)
+    try {
+      await sql`UPDATE users SET last_activity_at = now() WHERE id = ${user.id}`;
+    } catch (activityErr) {
+      if (activityErr?.code !== "42703") {
+        console.error("Erro ao atualizar last_activity_at no login:", activityErr);
+      }
+    }
+
+    const token = signToken({ userId: user.id });
     return res.status(200).json({
-      user: { id: user.id, email: user.email, name: user.name, role: user.role ?? "user" },
+      user: { id: user.id, phone: user.phone, email: user.email ?? null, name: user.name, role: user.role ?? "user" },
       token,
     });
   } catch (err) {
@@ -367,10 +932,11 @@ app.get("/api/me", async (req, res) => {
     let rows;
     try {
       rows = await sql`
-        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at, last_activity_at
         FROM users WHERE id = ${payload.userId}
       `;
     } catch (schemaErr) {
+      if (schemaErr?.code !== "42703") throw schemaErr;
       rows = await sql`
         SELECT id, email, name, created_at, updated_at
         FROM users WHERE id = ${payload.userId}
@@ -382,7 +948,11 @@ app.get("/api/me", async (req, res) => {
         rows[0].state = null;
         rows[0].country = null;
         rows[0].phone = null;
+        rows[0].address = null;
+        rows[0].address_complement = null;
+        rows[0].zipcode = null;
         rows[0].role = "user";
+        rows[0].last_activity_at = rows[0].updated_at;
       }
     }
     if (!rows || rows.length === 0) return res.status(404).json({ error: "Usuário não encontrado" });
@@ -398,9 +968,13 @@ app.get("/api/me", async (req, res) => {
         state: u.state ?? null,
         country: u.country ?? null,
         phone: u.phone ?? null,
+        address: u.address ?? null,
+        address_complement: u.address_complement ?? null,
+        zipcode: u.zipcode ?? null,
         role: u.role ?? "user",
         created_at: u.created_at,
         updated_at: u.updated_at ?? u.created_at,
+        last_activity_at: u.last_activity_at ?? u.updated_at ?? u.created_at,
       },
     });
   } catch (err) {
@@ -419,10 +993,24 @@ app.patch("/api/me", async (req, res) => {
   }
   if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
   try {
-    const [current] = await sql`
-      SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
-      FROM users WHERE id = ${payload.userId}
-    `;
+    let current;
+    try {
+      [current] = await sql`
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at
+        FROM users WHERE id = ${payload.userId}
+      `;
+    } catch (schemaErr) {
+      if (schemaErr?.code !== "42703") throw schemaErr;
+      [current] = await sql`
+        SELECT id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
+        FROM users WHERE id = ${payload.userId}
+      `;
+      if (current) {
+        current.address = null;
+        current.address_complement = null;
+        current.zipcode = null;
+      }
+    }
     if (!current) return res.status(404).json({ error: "Usuário não encontrado" });
     const body = req.body || {};
     const name = typeof body.name === "string" ? body.name.trim() || null : current.name;
@@ -431,15 +1019,37 @@ app.patch("/api/me", async (req, res) => {
     const city = body.city !== undefined ? (typeof body.city === "string" ? body.city.trim() || null : null) : current.city;
     const state = body.state !== undefined ? (typeof body.state === "string" ? body.state.trim() || null : null) : current.state;
     const country = body.country !== undefined ? (typeof body.country === "string" ? body.country.trim() || null : null) : current.country;
-    const phone = body.phone !== undefined ? (typeof body.phone === "string" ? body.phone.trim() || null : null) : current.phone;
-    const [updated] = await sql`
-      UPDATE users
-      SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
-          city = ${city}, state = ${state}, country = ${country}, phone = ${phone},
-          updated_at = now()
-      WHERE id = ${payload.userId}
-      RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
-    `;
+    const email = body.email !== undefined ? (typeof body.email === "string" ? body.email.trim().toLowerCase() || null : null) : current.email;
+    const address = body.address !== undefined ? (typeof body.address === "string" ? body.address.trim() || null : null) : current.address;
+    const address_complement = body.address_complement !== undefined ? (typeof body.address_complement === "string" ? body.address_complement.trim() || null : null) : current.address_complement;
+    const zipcode = body.zipcode !== undefined ? (typeof body.zipcode === "string" ? body.zipcode.trim() || null : null) : current.zipcode;
+    let updated;
+    try {
+      [updated] = await sql`
+        UPDATE users
+        SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
+            city = ${city}, state = ${state}, country = ${country}, email = ${email},
+            address = ${address}, address_complement = ${address_complement}, zipcode = ${zipcode},
+            updated_at = now()
+        WHERE id = ${payload.userId}
+        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, address, address_complement, zipcode, role, created_at, updated_at
+      `;
+    } catch (updateErr) {
+      if (updateErr?.code !== "42703") throw updateErr;
+      [updated] = await sql`
+        UPDATE users
+        SET name = ${name}, avatar_url = ${avatar_url}, birth_date = ${birth_date},
+            city = ${city}, state = ${state}, country = ${country}, email = ${email},
+            updated_at = now()
+        WHERE id = ${payload.userId}
+        RETURNING id, email, name, avatar_url, birth_date, city, state, country, phone, role, created_at, updated_at
+      `;
+      if (updated) {
+        updated.address = address ?? null;
+        updated.address_complement = address_complement ?? null;
+        updated.zipcode = zipcode ?? null;
+      }
+    }
     const u = updated;
     return res.status(200).json({
       user: {
@@ -452,6 +1062,9 @@ app.patch("/api/me", async (req, res) => {
         state: u.state ?? null,
         country: u.country ?? null,
         phone: u.phone ?? null,
+        address: u.address ?? null,
+        address_complement: u.address_complement ?? null,
+        zipcode: u.zipcode ?? null,
         role: u.role ?? "user",
         created_at: u.created_at,
         updated_at: u.updated_at ?? u.created_at,
@@ -460,6 +1073,396 @@ app.patch("/api/me", async (req, res) => {
   } catch (err) {
     console.error("Me PATCH error:", err);
     return res.status(500).json({ error: "Erro ao atualizar perfil" });
+  }
+});
+
+// --- Carrinho: identificado pelo telefone do usuário (um carrinho por usuário) ---
+async function getCartUser(req, res) {
+  const token = getBearerToken(req);
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
+    res.status(401).json({ error: "Faça login para acessar o carrinho" });
+    return null;
+  }
+  if (!sql) {
+    res.status(503).json({ error: "Banco de dados não configurado" });
+    return null;
+  }
+  const [user] = await sql`SELECT id, phone FROM users WHERE id = ${payload.userId}`;
+  if (!user) {
+    res.status(404).json({ error: "Usuário não encontrado" });
+    return null;
+  }
+  const phone = user.phone != null ? String(user.phone).trim() : "";
+  if (!phone) {
+    res.status(400).json({ error: "Carrinho disponível apenas para usuários com telefone cadastrado" });
+    return null;
+  }
+  return { userId: user.id, userPhone: phone };
+}
+
+app.get("/api/cart", async (req, res) => {
+  const cartUser = await getCartUser(req, res);
+  if (!cartUser) return;
+  try {
+    let [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
+    if (!cart) {
+      return res.status(200).json({ items: [] });
+    }
+    const items = await sql`
+      SELECT ci.perfume_id, ci.quantity, p.title, p.variants
+      FROM cart_items ci
+      JOIN perfumes p ON p.id = ci.perfume_id
+      WHERE ci.cart_id = ${cart.id}
+    `;
+    if (items.length === 0) return res.status(200).json({ items: [] });
+    const perfumeIds = items.map((i) => i.perfume_id ?? i.perfumeId).filter(Boolean);
+    const imgRows = await sql`
+      SELECT DISTINCT ON (perfume_id) perfume_id, url
+      FROM perfume_images
+      WHERE perfume_id = ANY(${perfumeIds})
+      ORDER BY perfume_id, position
+    `;
+    const imageByPerfume = new Map();
+    for (const row of imgRows || []) {
+      const pid = row.perfume_id ?? row.perfumeId;
+      const url = row.url != null ? String(row.url).trim() : "";
+      if (pid && url && !imageByPerfume.has(pid)) imageByPerfume.set(pid, url);
+    }
+    const out = items.map((i) => {
+      const pid = i.perfume_id ?? i.perfumeId;
+      const variants = i.variants || [];
+      const firstPrice = variants.find((v) => v && (v.price_number != null || v.price_short));
+      const priceNumber = firstPrice?.price_number ?? null;
+      const priceShort = firstPrice?.price_short ?? (priceNumber != null ? `R$ ${Number(priceNumber).toFixed(2)}` : "");
+      return {
+        id: pid,
+        perfume_id: pid,
+        quantity: Number(i.quantity) || 1,
+        title: i.title ?? "",
+        imageUrl: imageByPerfume.get(pid) ?? null,
+        priceShort,
+        price: priceNumber != null ? Number(priceNumber) : 0,
+      };
+    });
+    return res.status(200).json({ items: out });
+  } catch (err) {
+    console.error("GET /api/cart error:", err);
+    return res.status(500).json({ error: "Erro ao carregar carrinho" });
+  }
+});
+
+app.post("/api/cart/items", async (req, res) => {
+  const cartUser = await getCartUser(req, res);
+  if (!cartUser) return;
+  try {
+    const body = req.body || {};
+    const perfumeId = (body.perfume_id ?? body.perfumeId ?? "").toString().trim();
+    const quantity = Math.max(1, parseInt(body.quantity, 10) || 1);
+    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    const [perfume] = await sql`SELECT id FROM perfumes WHERE id = ${perfumeId}`;
+    if (!perfume) return res.status(404).json({ error: "Perfume não encontrado" });
+    let [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
+    if (!cart) {
+      const [created] = await sql`
+        INSERT INTO carts (user_phone) VALUES (${cartUser.userPhone})
+        RETURNING id
+      `;
+      cart = created;
+    }
+    await sql`
+      INSERT INTO cart_items (cart_id, perfume_id, quantity)
+      VALUES (${cart.id}, ${perfumeId}, ${quantity})
+      ON CONFLICT (cart_id, perfume_id)
+      DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+    `;
+    const [updated] = await sql`
+      SELECT quantity FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}
+    `;
+    await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
+    return res.status(200).json({ perfume_id: perfumeId, quantity: updated?.quantity ?? quantity });
+  } catch (err) {
+    if (err?.code === "23503") return res.status(404).json({ error: "Perfume não encontrado" });
+    console.error("POST /api/cart/items error:", err);
+    return res.status(500).json({ error: "Erro ao adicionar ao carrinho" });
+  }
+});
+
+app.patch("/api/cart/items/:perfumeId", async (req, res) => {
+  const cartUser = await getCartUser(req, res);
+  if (!cartUser) return;
+  try {
+    const perfumeId = (req.params.perfumeId ?? "").toString().trim();
+    const body = req.body || {};
+    const quantity = Math.max(0, parseInt(body.quantity, 10));
+    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    const [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
+    if (!cart) return res.status(200).json({ ok: true });
+    if (quantity === 0) {
+      await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}`;
+    } else {
+      await sql`
+        UPDATE cart_items SET quantity = ${quantity}
+        WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}
+      `;
+    }
+    await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("PATCH /api/cart/items error:", err);
+    return res.status(500).json({ error: "Erro ao atualizar carrinho" });
+  }
+});
+
+app.delete("/api/cart/items/:perfumeId", async (req, res) => {
+  const cartUser = await getCartUser(req, res);
+  if (!cartUser) return;
+  try {
+    const perfumeId = (req.params.perfumeId ?? "").toString().trim();
+    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    const [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
+    if (cart) {
+      await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id} AND perfume_id = ${perfumeId}`;
+      await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/cart/items error:", err);
+    return res.status(500).json({ error: "Erro ao remover do carrinho" });
+  }
+});
+
+// --- Pedidos: criar pedido a partir do carrinho e zerar o carrinho ---
+app.post("/api/orders", async (req, res) => {
+  const cartUser = await getCartUser(req, res);
+  if (!cartUser) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const [cart] = await sql`SELECT id FROM carts WHERE user_phone = ${cartUser.userPhone}`;
+    if (!cart) return res.status(400).json({ error: "Carrinho vazio" });
+    const cartItems = await sql`
+      SELECT ci.perfume_id, ci.quantity, p.title, p.variants
+      FROM cart_items ci
+      JOIN perfumes p ON p.id = ci.perfume_id
+      WHERE ci.cart_id = ${cart.id}
+    `;
+    if (!cartItems || cartItems.length === 0) return res.status(400).json({ error: "Carrinho vazio" });
+
+    const body = req.body || {};
+    const shippingName = typeof body.shipping_name === "string" ? body.shipping_name.trim() || null : null;
+    const shippingAddress = typeof body.shipping_address === "string" ? body.shipping_address.trim() || null : null;
+    const shippingComplement = typeof body.shipping_complement === "string" ? body.shipping_complement.trim() || null : null;
+    const shippingCity = typeof body.shipping_city === "string" ? body.shipping_city.trim() || null : null;
+    const shippingState = typeof body.shipping_state === "string" ? body.shipping_state.trim() || null : null;
+    const shippingZipcode = typeof body.shipping_zipcode === "string" ? body.shipping_zipcode.trim() || null : null;
+    const shippingCountry = typeof body.shipping_country === "string" ? body.shipping_country.trim() || null : null;
+    const shippingPhone = typeof body.shipping_phone === "string" ? body.shipping_phone.trim() || null : null;
+    const paymentMethod = typeof body.payment_method === "string" ? body.payment_method.trim() || null : null;
+    const subtotal = Number(body.subtotal);
+    const discount = Number(body.discount) || 0;
+    const shipping = Number(body.shipping) || 0;
+    const tax = Number(body.tax) || 0;
+    const total = Number(body.total);
+    if (Number.isNaN(subtotal) || subtotal < 0) return res.status(400).json({ error: "Subtotal inválido" });
+    if (Number.isNaN(total) || total < 0) return res.status(400).json({ error: "Total inválido" });
+
+    let orderId;
+    try {
+      const [order] = await sql`
+        INSERT INTO orders (user_id, user_phone, status, subtotal, discount, shipping, tax, total,
+          shipping_name, shipping_address, shipping_complement, shipping_city, shipping_state, shipping_zipcode, shipping_country, shipping_phone, payment_method)
+        VALUES (${cartUser.userId}, ${cartUser.userPhone}, 'pending', ${subtotal}, ${discount}, ${shipping}, ${tax}, ${total},
+          ${shippingName}, ${shippingAddress}, ${shippingComplement}, ${shippingCity}, ${shippingState}, ${shippingZipcode}, ${shippingCountry}, ${shippingPhone}, ${paymentMethod})
+        RETURNING id
+      `;
+      orderId = order?.id;
+      if (!orderId) throw new Error("Falha ao criar pedido");
+    } catch (orderErr) {
+      if (orderErr?.code === "42P01") return res.status(503).json({ error: "Tabela de pedidos não disponível. Execute as migrations." });
+      throw orderErr;
+    }
+
+    for (const item of cartItems) {
+      const perfumeId = item.perfume_id ?? item.perfumeId;
+      const quantity = Number(item.quantity) || 1;
+      const variants = item.variants || [];
+      const firstPrice = variants.find((v) => v && (v.price_number != null || v.price_short));
+      const unitPrice = firstPrice?.price_number != null ? Number(firstPrice.price_number) : 0;
+      const totalPrice = unitPrice * quantity;
+      const title = (item.title ?? "").toString() || "Produto";
+      await sql`
+        INSERT INTO order_items (order_id, perfume_id, title, quantity, unit_price, total_price)
+        VALUES (${orderId}, ${perfumeId}, ${title}, ${quantity}, ${unitPrice}, ${totalPrice})
+      `;
+    }
+
+    await sql`DELETE FROM cart_items WHERE cart_id = ${cart.id}`;
+    await sql`UPDATE carts SET updated_at = now() WHERE id = ${cart.id}`;
+
+    return res.status(201).json({ orderId, ok: true });
+  } catch (err) {
+    console.error("POST /api/orders error:", err);
+    return res.status(500).json({ error: "Erro ao finalizar pedido" });
+  }
+});
+
+// --- Lista de desejos: identificada pelo telefone do usuário (uma por usuário) ---
+async function getWishlistUser(req, res) {
+  const token = getBearerToken(req);
+  const payload = verifyToken(token);
+  if (!payload?.userId) {
+    res.status(401).json({ error: "Faça login para acessar a lista de desejos" });
+    return null;
+  }
+  if (!sql) {
+    res.status(503).json({ error: "Banco de dados não configurado" });
+    return null;
+  }
+  const [user] = await sql`SELECT id, phone FROM users WHERE id = ${payload.userId}`;
+  if (!user) {
+    res.status(404).json({ error: "Usuário não encontrado" });
+    return null;
+  }
+  const phone = user.phone != null ? String(user.phone).trim() : "";
+  if (!phone) {
+    res.status(400).json({ error: "Lista de desejos disponível apenas para usuários com telefone cadastrado" });
+    return null;
+  }
+  return { userId: user.id, userPhone: phone };
+}
+
+app.get("/api/wishlist", async (req, res) => {
+  const wUser = await getWishlistUser(req, res);
+  if (!wUser) return;
+  try {
+    let [wishlist] = await sql`SELECT id FROM wishlists WHERE user_phone = ${wUser.userPhone}`;
+    if (!wishlist) return res.status(200).json({ items: [] });
+
+    // Lista perfumes da wishlist (apenas ativos para o usuário comum)
+    let rows;
+    try {
+      rows = await sql`
+        SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url, p.ativo, p.esgotado
+        FROM wishlist_items wi
+        JOIN perfumes p ON p.id = wi.perfume_id
+        WHERE wi.wishlist_id = ${wishlist.id}
+          AND COALESCE(p.ativo, true) = true
+        ORDER BY p.title
+      `;
+    } catch (queryErr) {
+      if (queryErr?.code !== "42703") throw queryErr;
+      // Retrocompatibilidade: se ativo/esgotado ainda não existem, não filtra.
+      rows = await sql`
+        SELECT p.id, p.external_url, p.title, p.description, p.catalog_source, p.notes, p.variants, p.image_2_url
+        FROM wishlist_items wi
+        JOIN perfumes p ON p.id = wi.perfume_id
+        WHERE wi.wishlist_id = ${wishlist.id}
+        ORDER BY p.title
+      `;
+    }
+
+    if (!rows?.length) return res.status(200).json({ items: [] });
+    const idSet = new Set(rows.map((r) => toUuidKey(r.id)).filter(Boolean));
+    const allImages = await sql`SELECT perfume_id, url, position FROM perfume_images ORDER BY perfume_id, position`;
+    const imagesRows = idSet.size
+      ? allImages.filter((r) => idSet.has(toUuidKey(r.perfume_id ?? r.perfumeId)))
+      : [];
+    const imagesByPerfume = new Map();
+    for (const img of imagesRows) {
+      const pid = toUuidKey(img.perfume_id ?? img.perfumeId);
+      if (!pid) continue;
+      const url = typeof (img.url ?? img.URL) === "string" ? (img.url ?? img.URL).trim() : "";
+      if (!url) continue;
+      const list = imagesByPerfume.get(pid) || [];
+      const pos = Number(img.position ?? img.Position ?? list.length);
+      list.push({ url, position: pos });
+      imagesByPerfume.set(pid, list);
+    }
+    for (const [pid, arr] of imagesByPerfume) {
+      arr.sort((a, b) => a.position - b.position);
+      imagesByPerfume.set(pid, arr.map((x) => x.url));
+    }
+
+    const items = rows.map((p) => {
+      const perfumeId = toUuidKey(p.id);
+      let images = imagesByPerfume.get(perfumeId) ?? [];
+      if (images.length === 0) {
+        const vars = p.variants ?? [];
+        const firstWithImg = vars.find((v) => v && (v.image_url || v.imageUrl));
+        const url = firstWithImg && (firstWithImg.image_url ?? firstWithImg.imageUrl);
+        if (url) images = [String(url).startsWith("//") ? "https:" + url : url];
+      }
+      if (images.length === 0 && p.image_2_url) {
+        const u = String(p.image_2_url).trim();
+        if (u) images = [u.startsWith("//") ? "https:" + u : u];
+      }
+      return {
+        id: p.id,
+        url: p.external_url,
+        title: p.title,
+        description: p.description ?? "",
+        catalogSource: p.catalog_source,
+        notes: p.notes ?? {},
+        variants: p.variants ?? [],
+        images,
+        ativo: p.ativo === true || p.ativo == null,
+        esgotado: p.esgotado === true,
+      };
+    });
+    return res.status(200).json({ items });
+  } catch (err) {
+    console.error("GET /api/wishlist error:", err);
+    return res.status(500).json({ error: "Erro ao carregar lista de desejos" });
+  }
+});
+
+app.post("/api/wishlist/items", async (req, res) => {
+  const wUser = await getWishlistUser(req, res);
+  if (!wUser) return;
+  try {
+    const body = req.body || {};
+    const perfumeId = (body.perfume_id ?? body.perfumeId ?? "").toString().trim();
+    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    const [perfume] = await sql`SELECT id FROM perfumes WHERE id = ${perfumeId}`;
+    if (!perfume) return res.status(404).json({ error: "Perfume não encontrado" });
+
+    let [wishlist] = await sql`SELECT id FROM wishlists WHERE user_phone = ${wUser.userPhone}`;
+    if (!wishlist) {
+      const [created] = await sql`
+        INSERT INTO wishlists (user_phone) VALUES (${wUser.userPhone})
+        RETURNING id
+      `;
+      wishlist = created;
+    }
+
+    await sql`
+      INSERT INTO wishlist_items (wishlist_id, perfume_id)
+      VALUES (${wishlist.id}, ${perfumeId})
+      ON CONFLICT (wishlist_id, perfume_id) DO NOTHING
+    `;
+    await sql`UPDATE wishlists SET updated_at = now() WHERE id = ${wishlist.id}`;
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("POST /api/wishlist/items error:", err);
+    return res.status(500).json({ error: "Erro ao adicionar à lista de desejos" });
+  }
+});
+
+app.delete("/api/wishlist/items/:perfumeId", async (req, res) => {
+  const wUser = await getWishlistUser(req, res);
+  if (!wUser) return;
+  try {
+    const perfumeId = (req.params.perfumeId ?? "").toString().trim();
+    if (!perfumeId) return res.status(400).json({ error: "perfume_id é obrigatório" });
+    const [wishlist] = await sql`SELECT id FROM wishlists WHERE user_phone = ${wUser.userPhone}`;
+    if (wishlist) {
+      await sql`DELETE FROM wishlist_items WHERE wishlist_id = ${wishlist.id} AND perfume_id = ${perfumeId}`;
+      await sql`UPDATE wishlists SET updated_at = now() WHERE id = ${wishlist.id}`;
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/wishlist/items error:", err);
+    return res.status(500).json({ error: "Erro ao remover da lista de desejos" });
   }
 });
 
