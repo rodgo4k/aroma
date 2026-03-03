@@ -17,6 +17,8 @@ export default function AdminSidebar() {
           <Link
             to={href}
             className={`text-sm link fw-medium my-account-nav-item ${pathname === href || (href === "/painel/catalogo" && pathname.startsWith("/painel/catalogo")) ? "active" : ""}`}
+            data-bs-dismiss="offcanvas"
+            aria-label={label}
           >
             {label}
           </Link>
