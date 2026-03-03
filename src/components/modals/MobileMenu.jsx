@@ -40,7 +40,7 @@ export default function MobileMenu() {
             <form className="form-search">
               <input
                 type="text"
-                placeholder="Search product"
+                placeholder="Procurar produto"
                 className=""
                 name="text"
                 tabIndex={0}
@@ -54,19 +54,14 @@ export default function MobileMenu() {
             </form>
             <ul className="nav-ul-mb" id="wrapper-menu-navigation">
               <li className="nav-mb-item">
-                <a
-                  href="#dropdown-menu-home"
-                  className={`collapsed mb-menu-link  ${
-                    isMenuParentActive(demoItems) ? "menuActive" : ""
-                  } `}
-                  data-bs-toggle="collapse"
-                  aria-expanded="true"
-                  aria-controls="dropdown-menu-home"
-                >
-                  <span>Home</span>
-                  <span className="btn-open-sub" />
-                </a>
-                <div id="dropdown-menu-home" className="collapse">
+              <Link
+                to="/"
+                className={`mb-menu-link ${pathname === "/" ? "menuActive" : ""}`}
+                data-bs-dismiss="offcanvas"
+              >
+                <span>Início</span>
+              </Link>
+                {/* <div id="dropdown-menu-home" className="collapse">
                   <ul className="sub-nav-menu">
                     {demoItems.map((link, i) => (
                       <li key={i}>
@@ -81,22 +76,17 @@ export default function MobileMenu() {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </div> */}
               </li>
               <li className="nav-mb-item">
-                <a
-                  href="#dropdown-menu-shop"
-                  className={`collapsed mb-menu-link  ${
-                    isMenuParentActive2(shopPages) ? "menuActive" : ""
-                  } `}
-                  data-bs-toggle="collapse"
-                  aria-expanded="true"
-                  aria-controls="dropdown-menu-shop"
+                <Link
+                  to="/"
+                  className={`mb-menu-link ${pathname === "/catalogo" ? "menuActive" : ""}`}
+                  data-bs-dismiss="offcanvas"
                 >
                   <span>Catálogo</span>
-                  <span className="btn-open-sub" />
-                </a>
-                <div id="dropdown-menu-shop" className="collapse">
+                </Link>
+                {/* <div id="dropdown-menu-shop" className="collapse">
                   <ul className="sub-nav-menu">
                     {shopPages.map((elm, i) => (
                       <li key={i}>
@@ -131,7 +121,7 @@ export default function MobileMenu() {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </div> */}
               </li>
               {/* <li className="nav-mb-item">
                 <a
@@ -184,19 +174,14 @@ export default function MobileMenu() {
                 </div>
               </li> */}
               <li className="nav-mb-item">
-                <a
-                  href="#dropdown-menu-pages"
-                  className={`collapsed mb-menu-link  ${
-                    isMenuParentActive(otherPages) ? "menuActive" : ""
-                  } `}
-                  data-bs-toggle="collapse"
-                  aria-expanded="true"
-                  aria-controls="dropdown-menu-pages"
+                <Link
+                  to="/"
+                  className={`mb-menu-link ${pathname === "/about-us" ? "menuActive" : ""}`}
+                  data-bs-dismiss="offcanvas"
                 >
-                  <span>Páginas</span>
-                  <span className="btn-open-sub" />
-                </a>
-                <div id="dropdown-menu-pages" className="collapse">
+                  <span>Sobre Nós</span>
+                </Link>
+                {/* <div id="dropdown-menu-pages" className="collapse">
                   <ul className="sub-nav-menu">
                     {otherPages.map((link, i) => (
                       <li key={i}>
@@ -211,7 +196,16 @@ export default function MobileMenu() {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </div> */}
+              </li>
+              <li className="nav-mb-item">
+                <Link
+                  to="/"
+                  className={`mb-menu-link ${pathname === "/contact-us" ? "menuActive" : ""}`}
+                  data-bs-dismiss="offcanvas"
+                >
+                  <span>Contato</span>
+                </Link>
               </li>
               {/* <li className="nav-mb-item">
                 <a
@@ -261,7 +255,7 @@ export default function MobileMenu() {
             <div className="group-icon">
               <Link to={`/wish-list`} className="site-nav-icon">
                 <i className="icon icon-heart" />
-                Wishlist
+                Favoritos
               </Link>
               <a
                 href={`#${accountTarget}`}
@@ -272,22 +266,7 @@ export default function MobileMenu() {
                 {user ? "Minha conta" : "Login"}
               </a>
             </div>
-            <div className="mb-notice">
-              <Link to={`/contact-us`} className="text-need">
-                Need Help?
-              </Link>
-            </div>
-            <div className="mb-contact">
-              <p>Address: 123 Yarran st, Punchbowl, NSW 2196, Australia</p>
-            </div>
-            <ul className="mb-info">
-              <li>
-                Email: <b className="fw-medium">clientcare@ecom.com</b>
-              </li>
-              <li>
-                Phone: <b className="fw-medium">1.888.838.3022</b>
-              </li>
-            </ul>
+            
           </div>
         </div>
         <div className="mb-bottom">
