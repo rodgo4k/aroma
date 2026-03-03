@@ -87,7 +87,7 @@ export default function ShopCart() {
                               </Link>
                               <div className="variants">{product.priceShort || ""}</div>
                               <span
-                                className="remove-cart link remove"
+                                className="remove-cart link remove cursor-pointer"
                                 onClick={() => removeItem(product.id)}
                               >
                                 Remover
@@ -143,7 +143,7 @@ export default function ShopCart() {
                   </label>
                 </div>
                 <div className="box-ip-discount d-flex flex-column gap-2">
-                  <input type="text" placeholder="Discount code" />
+                  <input type="text" placeholder="Código de Desconto" />
                   <button
                     type="button"
                     className="tf-btn radius-6 btn-out-line-dark-2 align-self-start"
