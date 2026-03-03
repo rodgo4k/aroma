@@ -83,9 +83,8 @@ export default function Slider5({
       driftAll.forEach((el) => {
         new Drift(el, {
           zoomFactor: 2,
-          inlinePane: true,
-          containInline: false,
           inlinePane: 35,
+          containInline: false,
           paneClass: "drift-pane",
         });
       });
