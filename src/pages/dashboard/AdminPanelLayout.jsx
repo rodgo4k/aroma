@@ -58,9 +58,16 @@ export default function AdminPanelLayout() {
       <Breadcumb pageName="Painel" pageTitle="Painel de Controle" />
       <div className="flat-spacing-13">
         <div className="container-7">
-          <div className="btn-sidebar-mb d-lg-none">
-            <button data-bs-toggle="offcanvas" data-bs-target="#mbAdminSidebar" type="button">
-              <i className="icon icon-sidebar" />
+          <div className="btn-sidebar-mb d-lg-none" style={{ top: "140px" }}>
+            <button
+              type="button"
+              className="d-flex align-items-center gap-2 px-3 py-2 bg-dark text-white border-0 rounded-end shadow"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#mbAdminSidebar"
+              aria-label="Abrir menu do painel"
+            >
+              <i className="icon icon-sidebar" aria-hidden />
+              <span className="text-sm fw-medium">Menu</span>
             </button>
           </div>
           <div className="main-content-account">
