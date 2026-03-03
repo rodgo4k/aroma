@@ -93,7 +93,7 @@ export default function MobileMenu() {
                   aria-expanded="true"
                   aria-controls="dropdown-menu-shop"
                 >
-                  <span>Shop</span>
+                  <span>Catálogo</span>
                   <span className="btn-open-sub" />
                 </a>
                 <div id="dropdown-menu-shop" className="collapse">
@@ -133,7 +133,7 @@ export default function MobileMenu() {
                   </ul>
                 </div>
               </li>
-              <li className="nav-mb-item">
+              {/* <li className="nav-mb-item">
                 <a
                   href="#dropdown-menu-product"
                   className={`collapsed mb-menu-link ${
@@ -182,7 +182,7 @@ export default function MobileMenu() {
                     ))}
                   </ul>
                 </div>
-              </li>
+              </li> */}
               <li className="nav-mb-item">
                 <a
                   href="#dropdown-menu-pages"
@@ -193,7 +193,7 @@ export default function MobileMenu() {
                   aria-expanded="true"
                   aria-controls="dropdown-menu-pages"
                 >
-                  <span>Pages</span>
+                  <span>Páginas</span>
                   <span className="btn-open-sub" />
                 </a>
                 <div id="dropdown-menu-pages" className="collapse">
@@ -213,7 +213,7 @@ export default function MobileMenu() {
                   </ul>
                 </div>
               </li>
-              <li className="nav-mb-item">
+              {/* <li className="nav-mb-item">
                 <a
                   href="#dropdown-menu-blog"
                   className={`collapsed mb-menu-link  ${
@@ -242,7 +242,7 @@ export default function MobileMenu() {
                     ))}
                   </ul>
                 </div>
-              </li>
+              </li> */}
               {isAdmin && (
                 <li className="nav-mb-item">
                   <Link
@@ -255,14 +255,6 @@ export default function MobileMenu() {
                   </Link>
                 </li>
               )}
-              <li className="nav-mb-item">
-                <a
-                  href="https://themeforest.net/user/themesflat"
-                  className="mb-menu-link"
-                >
-                  Buy Theme
-                </a>
-              </li>
             </ul>
           </div>
           <div className="mb-other-content">
