@@ -1,15 +1,10 @@
-export const CATALOG_OPTIONS = [
+﻿export const CATALOG_OPTIONS = [
   { value: "all", label: "Todos" },
-  { value: "arabe", label: "Árabe" },
+  { value: "arabe", label: "Ãrabe" },
   { value: "feminino", label: "Feminino" },
   { value: "normal", label: "Masculino / Unissex" },
 ];
 
-/**
- * Extrai dados para exibição e filtro de um item do catálogo (API ou objeto com mesma forma).
- * @param {Object} item - Item com url, title, description, images[], notes, variants[].
- * @returns {{ imageUrl: string, title: string, priceMin: number, priceShort: string, url: string, catalogSource: string, catalogLabel: string, description: string, notes: Object }}
- */
 export function getPerfumeDisplayData(item) {
   const variants = item.variants || [];
   const withPrice = variants.filter((v) => v.price_number != null);
@@ -22,9 +17,9 @@ export function getPerfumeDisplayData(item) {
     ? (String(item.images[0]).startsWith("//") ? "https:" + item.images[0] : item.images[0])
     : "";
   const imageUrl = mainImage || variantImage || "";
-  const priceShort = firstVariant?.price_short || (priceMin != null ? `R$ ${priceMin.toFixed(2).replace(".", ",")}` : "");
+  const priceShort = firstVariant?.price_short || (priceMin != null ? `R$ ` + priceMin.toFixed(2).replace(".", ",") : "");
   const source = item.catalogSource || "normal";
-  const labels = { arabe: "Árabe", feminino: "Feminino", normal: "Masculino / Unissex" };
+  const labels = { arabe: "Ãrabe", feminino: "Feminino", normal: "Masculino / Unissex" };
   return {
     imageUrl,
     title: item.title || "",
@@ -38,11 +33,6 @@ export function getPerfumeDisplayData(item) {
   };
 }
 
-/**
- * Lista todas as URLs de imagem do perfume (item.images + variants[].image_url, únicas).
- * @param {Object} item - Item com images[] e variants[] (API ou JSON).
- * @returns {string[]}
- */
 export function getPerfumeAllImages(item) {
   const seen = new Set();
   const out = [];
