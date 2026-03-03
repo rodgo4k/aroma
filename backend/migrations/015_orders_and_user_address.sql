@@ -1,9 +1,7 @@
--- Campos de endereço em users (para checkout e perfil)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS address TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS address_complement VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS zipcode VARCHAR(20);
 
--- Pedidos
 CREATE TABLE IF NOT EXISTS orders (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id           UUID REFERENCES users(id) ON DELETE SET NULL,
@@ -31,7 +29,6 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders (user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_phone ON orders (user_phone);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders (created_at);
 
--- Itens do pedido
 CREATE TABLE IF NOT EXISTS order_items (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id   UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
