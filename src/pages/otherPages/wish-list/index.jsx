@@ -22,14 +22,14 @@ export default function WishlistPage() {
             <ul className="breadcrumb-list">
               <li className="item-breadcrumb">
                 <Link to={`/`} className="text">
-                  Home
+                  Início
                 </Link>
               </li>
               <li className="item-breadcrumb dot">
                 <span />
               </li>
               <li className="item-breadcrumb">
-                <span className="text">Account</span>
+                <span className="text">Minha Conta</span>
               </li>
             </ul>
           </div>
@@ -38,7 +38,7 @@ export default function WishlistPage() {
         {/* Title Page */}
         <section className="s-title-page flat-spacing-2 pt-0">
           <div className="container">
-            <h4 className="s-title letter-0 text-center">My Wishlist</h4>
+            <h4 className="s-title letter-0 text-center">Favoritos</h4>
           </div>
         </section>
         {/* /Title Page */}
