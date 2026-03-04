@@ -7,13 +7,22 @@ import { handlePerfumes } from "../lib/api/perfumes.js";
 import { handleAdminUsers } from "../lib/api/adminUsers.js";
 
 export default async function handler(req, res) {
-  // Extrai o caminho depois de /api usando req.url, independente de query params
-  const rawUrl = req.url || "";
-  const pathOnly = rawUrl.split("?")[0] || "";
-  let path = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
-  if (path.startsWith("/")) path = path.slice(1);
+  // 1) Primeiro tenta usar req.query.path (padrão Vercel/Next para [[...path]])
+  let segments = [];
+  const qp = req.query && req.query.path;
+  if (Array.isArray(qp)) {
+    segments = qp;
+  } else if (typeof qp === "string" && qp.length) {
+    segments = qp.split("/").filter(Boolean);
+  } else {
+    // 2) Fallback: extrai o caminho de req.url depois de /api
+    const rawUrl = req.url || "";
+    const pathOnly = rawUrl.split("?")[0] || "";
+    let path = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
+    if (path.startsWith("/")) path = path.slice(1);
+    segments = path ? path.split("/").filter(Boolean) : [];
+  }
 
-  const segments = path ? path.split("/").filter(Boolean) : [];
   const [first, ...rest] = segments;
 
   try {
@@ -45,4 +54,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 }
+
 
