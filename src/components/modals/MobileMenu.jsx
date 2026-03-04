@@ -12,6 +12,7 @@ import { useLocation } from "react-router-dom";
 import LanguageSelect from "../common/LanguageSelect";
 import CurrencySelect from "../common/CurrencySelect";
 import { useContextElement } from "@/context/Context";
+import { adminLinks } from "@/components/dashboard/AdminSidebar";
 
 export default function MobileMenu() {
   const { pathname } = useLocation();
@@ -54,13 +55,15 @@ export default function MobileMenu() {
             </form>
             <ul className="nav-ul-mb" id="wrapper-menu-navigation">
               <li className="nav-mb-item">
-              <Link
-                to="/"
-                className={`mb-menu-link ${pathname === "/" ? "menuActive" : ""}`}
-                data-bs-dismiss="offcanvas"
-              >
-                <span>Início</span>
-              </Link>
+                <Link
+                  to="/"
+                  className={`mb-menu-link ${
+                    pathname === "/" ? "menuActive" : ""
+                  }`}
+                  data-bs-dismiss="offcanvas"
+                >
+                  <span>Início</span>
+                </Link>
                 {/* <div id="dropdown-menu-home" className="collapse">
                   <ul className="sub-nav-menu">
                     {demoItems.map((link, i) => (
@@ -80,8 +83,10 @@ export default function MobileMenu() {
               </li>
               <li className="nav-mb-item">
                 <Link
-                  to="/"
-                  className={`mb-menu-link ${pathname === "/catalogo" ? "menuActive" : ""}`}
+                  to="/catalogo"
+                  className={`mb-menu-link ${
+                    pathname === "/catalogo" ? "menuActive" : ""
+                  }`}
                   data-bs-dismiss="offcanvas"
                 >
                   <span>Catálogo</span>
@@ -175,8 +180,10 @@ export default function MobileMenu() {
               </li> */}
               <li className="nav-mb-item">
                 <Link
-                  to="/"
-                  className={`mb-menu-link ${pathname === "/about-us" ? "menuActive" : ""}`}
+                  to="/about-us"
+                  className={`mb-menu-link ${
+                    pathname === "/about-us" ? "menuActive" : ""
+                  }`}
                   data-bs-dismiss="offcanvas"
                 >
                   <span>Sobre Nós</span>
@@ -200,8 +207,10 @@ export default function MobileMenu() {
               </li>
               <li className="nav-mb-item">
                 <Link
-                  to="/"
-                  className={`mb-menu-link ${pathname === "/contact-us" ? "menuActive" : ""}`}
+                  to="/contact-us"
+                  className={`mb-menu-link ${
+                    pathname === "/contact-us" ? "menuActive" : ""
+                  }`}
                   data-bs-dismiss="offcanvas"
                 >
                   <span>Contato</span>
@@ -239,14 +248,43 @@ export default function MobileMenu() {
               </li> */}
               {isAdmin && (
                 <li className="nav-mb-item">
-                  <Link
-                    to="/painel"
-                    className={`mb-menu-link ${
+                  <a
+                    href="#dropdown-menu-admin"
+                    className={`collapsed mb-menu-link ${
                       pathname.startsWith("/painel") ? "menuActive" : ""
                     }`}
+                    data-bs-toggle="collapse"
+                    aria-expanded={pathname.startsWith("/painel")}
+                    aria-controls="dropdown-menu-admin"
                   >
-                    Painel de Controle
-                  </Link>
+                    <span>Painel de Controle</span>
+                    <span className="btn-open-sub" />
+                  </a>
+                  <div
+                    id="dropdown-menu-admin"
+                    className={`collapse ${
+                      pathname.startsWith("/painel") ? "show" : ""
+                    }`}
+                  >
+                    <ul className="sub-nav-menu">
+                      {adminLinks.map(({ href, label }) => (
+                        <li key={href}>
+                          <Link
+                            to={href}
+                            className={`sub-nav-link ${
+                              pathname === href ||
+                              pathname.startsWith(`${href}/`)
+                                ? "menuActive"
+                                : ""
+                            }`}
+                            data-bs-dismiss="offcanvas"
+                          >
+                            {label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </li>
               )}
             </ul>
