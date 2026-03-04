@@ -7,13 +7,13 @@ import { handlePerfumes } from "../lib/api/perfumes.js";
 import { handleAdminUsers } from "../lib/api/adminUsers.js";
 
 export default async function handler(req, res) {
-  const rawPath = req.query?.path;
-  const segments = Array.isArray(rawPath)
-    ? rawPath
-    : typeof rawPath === "string"
-      ? [rawPath]
-      : [];
+  // Extrai o caminho depois de /api usando req.url, independente de query params
+  const rawUrl = req.url || "";
+  const pathOnly = rawUrl.split("?")[0] || "";
+  let path = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
+  if (path.startsWith("/")) path = path.slice(1);
 
+  const segments = path ? path.split("/").filter(Boolean) : [];
   const [first, ...rest] = segments;
 
   try {
