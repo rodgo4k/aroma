@@ -8,6 +8,7 @@ import { checkAdmin } from "@/api/auth";
 import MetaComponent from "@/components/common/MetaComponent";
 import Breadcumb from "@/components/common/Breadcumb";
 import AdminSidebar from "@/components/dashboard/AdminSidebar";
+import AdminQuickNav from "@/components/dashboard/AdminQuickNav";
 
 const metadata = {
   title: "Painel de Controle | Aroma",
@@ -77,6 +78,7 @@ export default function AdminPanelLayout() {
               </ul>
             </div>
             <div className="my-acount-content">
+              <AdminQuickNav />
               <Outlet />
             </div>
           </div>
