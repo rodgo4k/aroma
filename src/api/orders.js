@@ -1,6 +1,6 @@
 const BASE = import.meta.env.VITE_API_URL || "";
 
-function getBase() {
+export function getBase() {
   const b = (BASE || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
   return b || "";
 }
@@ -25,5 +25,31 @@ export async function createOrder(payload) {
   });
   const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
   if (!res.ok) throw new Error(data.error || "Erro ao finalizar pedido");
+  return data;
+}
+
+/**
+ * Retorna a lista de pedidos do usuário logado.
+ */
+export async function getMyOrders() {
+  const res = await fetch(`${getBase()}/api/my-orders`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
+  if (!res.ok) throw new Error(data.error || "Erro ao carregar pedidos");
+  return Array.isArray(data) ? data : Array.isArray(data.orders) ? data.orders : [];
+}
+
+/**
+ * Retorna os detalhes de um pedido específico do usuário logado.
+ */
+export async function getMyOrder(id) {
+  const res = await fetch(`${getBase()}/api/my-orders/${encodeURIComponent(id)}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+  const data = res.headers.get("content-type")?.includes("application/json") ? await res.json().catch(() => ({})) : {};
+  if (!res.ok) throw new Error(data.error || "Erro ao carregar pedido");
   return data;
 }
