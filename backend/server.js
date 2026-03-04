@@ -591,6 +591,127 @@ app.get("/api/admin/users", async (req, res) => {
   }
 });
 
+app.get("/api/admin/orders", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const statusParam =
+      typeof req.query.status === "string"
+        ? req.query.status.trim().toLowerCase()
+        : "";
+    const allowedStatus = ["pending", "shipped", "completed", "canceled"];
+    const hasFilter =
+      statusParam && statusParam !== "all" && allowedStatus.includes(statusParam);
+
+    let rows;
+    if (hasFilter) {
+      rows = await sql`
+        SELECT o.id,
+               o.user_id,
+               o.user_phone,
+               o.status,
+               o.total,
+               o.created_at,
+               o.updated_at,
+               u.name  AS customer_name,
+               u.email AS customer_email
+        FROM orders o
+        LEFT JOIN users u ON u.id = o.user_id
+        WHERE o.status = ${statusParam}
+        ORDER BY o.created_at DESC
+      `;
+    } else {
+      rows = await sql`
+        SELECT o.id,
+               o.user_id,
+               o.user_phone,
+               o.status,
+               o.total,
+               o.created_at,
+               o.updated_at,
+               u.name  AS customer_name,
+               u.email AS customer_email
+        FROM orders o
+        LEFT JOIN users u ON u.id = o.user_id
+        ORDER BY o.created_at DESC
+      `;
+    }
+
+    const list = (rows || []).map((o) => ({
+      id: o.id,
+      status: o.status,
+      total: Number(o.total || 0),
+      created_at: o.created_at,
+      updated_at: o.updated_at,
+      user_id: o.user_id ?? null,
+      customer_name: o.customer_name ?? null,
+      customer_email: o.customer_email ?? null,
+      customer_phone: o.user_phone ?? null,
+    }));
+
+    return res.status(200).json(list);
+  } catch (err) {
+    console.error("GET /api/admin/orders error:", err);
+    return res.status(500).json({ error: "Erro ao listar pedidos" });
+  }
+});
+
+app.patch("/api/admin/orders/:id/status", async (req, res) => {
+  const payload = await requireAdmin(req, res);
+  if (!payload) return;
+  if (!sql) return res.status(503).json({ error: "Banco de dados não configurado" });
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ error: "ID do pedido é obrigatório" });
+
+    const allowedStatus = ["pending", "shipped", "completed", "canceled"];
+    const body = req.body || {};
+    const status =
+      typeof body.status === "string"
+        ? body.status.trim().toLowerCase()
+        : "";
+
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({
+        error:
+          "Status inválido. Use: pending, shipped, completed ou canceled.",
+      });
+    }
+
+    const [existing] =
+      await sql`SELECT id FROM orders WHERE id = ${id}`;
+    if (!existing) {
+      return res.status(404).json({ error: "Pedido não encontrado" });
+    }
+
+    const [updated] = await sql`
+      UPDATE orders
+      SET status = ${status}, updated_at = now()
+      WHERE id = ${id}
+      RETURNING id, user_id, user_phone, status, total, created_at, updated_at
+    `;
+    if (!updated) {
+      return res.status(500).json({ error: "Erro ao atualizar pedido" });
+    }
+
+    return res.status(200).json({
+      id: updated.id,
+      status: updated.status,
+      total: Number(updated.total || 0),
+      created_at: updated.created_at,
+      updated_at: updated.updated_at,
+      user_id: updated.user_id ?? null,
+      customer_name: null,
+      customer_email: null,
+      customer_phone: updated.user_phone ?? null,
+    });
+  } catch (err) {
+    console.error("PATCH /api/admin/orders/:id/status error:", err);
+    return res.status(500).json({ error: "Erro ao atualizar status do pedido" });
+  }
+});
+
 app.get("/api/admin/access-info", async (req, res) => {
   const payload = await requireAdmin(req, res);
   if (!payload) return;

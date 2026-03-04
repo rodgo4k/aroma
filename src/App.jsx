@@ -63,6 +63,7 @@ import AdminCatalogPage from "./pages/dashboard/admin-panel/AdminCatalogPage";
 import AdminPerfumeDetailPage from "./pages/dashboard/admin-panel/AdminPerfumeDetailPage";
 import AdminUsersPage from "./pages/dashboard/admin-panel/AdminUsersPage";
 import AdminUserDetailPage from "./pages/dashboard/admin-panel/AdminUserDetailPage";
+import AdminOrdersPage from "./pages/dashboard/admin-panel/AdminOrdersPage";
 import AdminAccessPage from "./pages/dashboard/admin-panel/AdminAccessPage";
 import CatalogPage from "./pages/catalog";
 import PerfumePage from "./pages/perfume/PerfumePage";
@@ -332,6 +333,7 @@ function App() {
               <Route path="catalogo/:id" element={<AdminPerfumeDetailPage />} />
               <Route path="usuarios" element={<AdminUsersPage />} />
               <Route path="usuarios/:id" element={<AdminUserDetailPage />} />
+              <Route path="pedidos" element={<AdminOrdersPage />} />
               <Route path="acesso" element={<AdminAccessPage />} />
             </Route>
 
