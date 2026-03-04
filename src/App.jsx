@@ -64,6 +64,7 @@ import AdminPerfumeDetailPage from "./pages/dashboard/admin-panel/AdminPerfumeDe
 import AdminUsersPage from "./pages/dashboard/admin-panel/AdminUsersPage";
 import AdminUserDetailPage from "./pages/dashboard/admin-panel/AdminUserDetailPage";
 import AdminOrdersPage from "./pages/dashboard/admin-panel/AdminOrdersPage";
+import AdminOrderDetailPage from "./pages/dashboard/admin-panel/AdminOrderDetailPage";
 import AdminAccessPage from "./pages/dashboard/admin-panel/AdminAccessPage";
 import CatalogPage from "./pages/catalog";
 import PerfumePage from "./pages/perfume/PerfumePage";
@@ -111,6 +112,7 @@ import BlogGridPage1 from "./pages/blogs/blog-grid-01";
 import BlogGridPage2 from "./pages/blogs/blog-grid-02";
 import BlogDetailsPage1 from "./pages/blogs/blog-single";
 import AccountOrderPage from "./pages/dashboard/account-orders";
+import AccountOrderDetailPage from "./pages/dashboard/account-orders/OrderDetailPage";
 import WishlistPage from "./pages/otherPages/wish-list";
 import AccountAddressPage from "./pages/dashboard/account-addresses";
 import CheckoutPage from "./pages/otherPages/checkout";
@@ -334,6 +336,7 @@ function App() {
               <Route path="usuarios" element={<AdminUsersPage />} />
               <Route path="usuarios/:id" element={<AdminUserDetailPage />} />
               <Route path="pedidos" element={<AdminOrdersPage />} />
+              <Route path="pedidos/:id" element={<AdminOrderDetailPage />} />
               <Route path="acesso" element={<AdminAccessPage />} />
             </Route>
 
@@ -483,6 +486,7 @@ function App() {
             <Route path="blog-single/:id" element={<BlogDetailsPage1 />} />
 
             <Route path="account-orders" element={<AccountOrderPage />} />
+            <Route path="account-orders/:id" element={<AccountOrderDetailPage />} />
             <Route path="wish-list" element={<WishlistPage />} />
             <Route path="account-addresses" element={<AccountAddressPage />} />
             <Route path="*" element={<NotFoundPage />} />

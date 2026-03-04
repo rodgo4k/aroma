@@ -74,3 +74,8 @@ export async function updateOrderStatus(id, status) {
     body: { status },
   });
 }
+
+export async function getAdminOrder(id) {
+  if (!id) throw new Error("ID do pedido é obrigatório");
+  return fetchWithAuth(`/api/admin/orders/${id}`);
+}

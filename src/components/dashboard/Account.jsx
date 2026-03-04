@@ -1,20 +1,51 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import { Link } from "react-router-dom";
+import { useContextElement } from "@/context/Context";
+import { createOrder } from "@/api/orders";
 
 import CountdownTimer from "../common/Countdown";
+
 export default function Account() {
+  const { user, wishList } = useContextElement();
+  const [ordersCount, setOrdersCount] = useState(0);
+
+  useEffect(() => {
+    // No futuro podemos trocar para um endpoint dedicado de "meus pedidos".
+    // Por enquanto, apenas não exibimos contagem se o backend não suportar.
+    async function loadOrdersCount() {
+      try {
+        const res = await fetch("/api/my-orders", {
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setOrdersCount(data.length);
+        } else if (Array.isArray(data.orders)) {
+          setOrdersCount(data.orders.length);
+        }
+      } catch {
+        // Silencia erros - página continua funcionando.
+      }
+    }
+    loadOrdersCount();
+  }, []);
+
+  const firstName =
+    (user?.name || "")
+      .split(" ")
+      .filter(Boolean)
+      .at(0) || "cliente";
+
   return (
     <div className="flat-spacing-13">
       <div className="container-7">
-        {/* sidebar-account */}
         <div className="btn-sidebar-mb d-lg-none">
           <button data-bs-toggle="offcanvas" data-bs-target="#mbAccount">
             <i className="icon icon-sidebar" />
           </button>
         </div>
-        {/* /sidebar-account */}
-        {/* Section-acount */}
 
         <div className="main-content-account">
           <div className="sidebar-account-wrap sidebar-content-wrap sticky-top d-lg-block d-none">
@@ -25,29 +56,11 @@ export default function Account() {
           <div className="my-acount-content account-dashboard">
             <div className="box-account-title">
               <p className="hello-name display-sm fw-medium">
-                Hello Vinetant Pham!
-                <span>
-                  (not <span className="name">Vinetant Pham</span>?
-                </span>
-                <Link to={`/`} className="text-decoration-underline link">
-                  Log Out
-                </Link>
-                <span>)</span>
+                Olá, {firstName}!
               </p>
               <p className="notice text-sm">
-                Today is a great day to check your account page. You can check{" "}
-                <a href="#" className="text-primary text-decoration-underline">
-                  your last orders
-                </a>{" "}
-                or have a look to{" "}
-                <a href="#" className="text-primary text-decoration-underline">
-                  your wishlist
-                </a>{" "}
-                . Or maybe you can start to shop{" "}
-                <a href="#" className="text-primary text-decoration-underline">
-                  our latest offers
-                </a>{" "}
-                ?
+                Aqui você acompanha o histórico dos seus pedidos, seus
+                endereços de entrega e sua lista de desejos.
               </p>
             </div>
             <div className="content-account">
@@ -60,15 +73,15 @@ export default function Account() {
                     <div className="icon">
                       <i className="icon-order" />
                       <span className="count-number text-sm text-white fw-medium">
-                        1
+                        {ordersCount}
                       </span>
                     </div>
                     <div className="text">
                       <div className="link name-type text-xl fw-medium">
-                        Orders
+                        Pedidos
                       </div>
                       <p className="sub-type text-sm">
-                        Check the history of all your orders
+                        Veja o histórico de todos os seus pedidos
                       </p>
                     </div>
                   </Link>
@@ -78,14 +91,16 @@ export default function Account() {
                     <div className="icon">
                       <i className="icon-heart" />
                       <span className="count-number text-sm text-white fw-medium">
-                        1
+                        {wishList.length}
                       </span>
                     </div>
                     <div className="text">
                       <div className="link name-type text-xl fw-medium">
-                        Wishlist
+                        Lista de desejos
                       </div>
-                      <p className="sub-type text-sm">Check your wishlist</p>
+                      <p className="sub-type text-sm">
+                        Acompanhe os perfumes que você salvou
+                      </p>
                     </div>
                   </Link>
                 </li>
@@ -102,12 +117,14 @@ export default function Account() {
                 </div>
                 <div className="banner-content-right">
                   <div className="banner-title">
-                    <p className="display-md fw-medium">Free Shipping</p>
-                    <p className="text-md">for all orders over $300.00</p>
+                    <p className="display-md fw-medium">Frete especial</p>
+                    <p className="text-md">
+                      Condições diferenciadas para clientes cadastrados.
+                    </p>
                   </div>
                   <div className="banner-btn">
-                    <Link to={`/shop-default`} className="tf-btn animate-btn">
-                      Shop Now
+                    <Link to={`/catalogo`} className="tf-btn animate-btn">
+                      Ver catálogo
                     </Link>
                   </div>
                 </div>
@@ -115,18 +132,18 @@ export default function Account() {
               <div className="banner-account banner-acc-countdown bg-linear d-flex align-items-center">
                 <div className="banner-content-left">
                   <div className="banner-title">
-                    <p className="sub text-md fw-medium">SUMMER SALE</p>
-                    <p className="display-xl fw-medium">50% OFF</p>
+                    <p className="sub text-md fw-medium">OFERTAS DA SEMANA</p>
+                    <p className="display-xl fw-medium">Descontos especiais</p>
                     <p className="sub text-md fw-medium">
-                      WITH PROMOTE CODE: 12D34E
+                      Aproveite antes que o tempo acabe
                     </p>
                   </div>
                   <div className="banner-btn">
                     <Link
-                      to={`/shop-default`}
+                      to={`/catalogo`}
                       className="tf-btn btn-white animate-btn animate-dark"
                     >
-                      Shop Now
+                      Ver perfumes
                     </Link>
                   </div>
                 </div>
@@ -142,7 +159,6 @@ export default function Account() {
           </div>
         </div>
       </div>
-      {/* /Account */}
     </div>
   );
 }
