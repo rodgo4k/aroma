@@ -1,8 +1,3 @@
-/**
- * Uma única serverless function para /api/admin/users e /api/admin/users/:id
- * path undefined ou [] -> GET lista
- * path = [id] -> GET detalhe ou POST make-admin
- */
 import { sql } from "../../../lib/db.js";
 import { getBearerToken, verifyToken } from "../../../lib/auth.js";
 

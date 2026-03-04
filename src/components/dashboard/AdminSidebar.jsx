@@ -2,7 +2,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 
-const adminLinks = [
+export const adminLinks = [
   { href: "/painel/catalogo", label: "Catálogo" },
   { href: "/painel/usuarios", label: "Usuários cadastrados" },
   // { href: "/painel/acesso", label: "Dados de acesso ao site" },
