@@ -31,7 +31,6 @@ export default function Checkout() {
   const [zipcode, setZipcode] = useState("");
   const [phone, setPhone] = useState("");
   const [contact, setContact] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -101,7 +100,7 @@ export default function Checkout() {
         shipping_zipcode: zipcode.trim() || null,
         shipping_country: country.trim() || null,
         shipping_phone: phone.trim(),
-        payment_method: paymentMethod,
+        payment_method: "cash_delivery",
       });
       const { items } = await getCart();
       setCartProducts(items);
@@ -236,209 +235,31 @@ export default function Checkout() {
                   />
                 </div>
               <div className="box-ip-shipping">
-                <div className="title text-xl fw-medium">Método de entrega</div>
-                <fieldset className="mb_16">
-                  <label htmlFor="freeship" className="check-ship">
-                    <input
-                      type="radio"
-                      id="freeship"
-                      className="tf-check-rounded"
-                      name="checkshipping"
-                    />
-                    <span className="text text-sm">
-                      <span>Frete Grátis (Estimativa em 7/10 - 10/10/2025)</span>
-                      <span className="price">$00.00</span>
-                    </span>
-                  </label>
-                </fieldset>
-                {/* <fieldset>
-                  <label htmlFor="expship" className="check-ship">
-                    <input
-                      type="radio"
-                      id="expship"
-                      className="tf-check-rounded"
-                      name="checkshipping"
-                      defaultChecked=""
-                    />
-                    <span className="text text-sm">
-                      <span>
-                        Frete Express (Estimativa em 4/10 - 5/10/2025)
-                      </span>
-                      <span className="price">$10.00</span>
-                    </span>
-                  </label>
-                </fieldset> */}
+                <div className="title text-xl fw-medium">Entrega</div>
+                <p className="text-sm text-main mb_8">
+                  Trabalhamos com entrega combinada após o pedido. Entraremos
+                  em contato para alinhar detalhes de frete e prazo.
+                </p>
               </div>
               <div className="box-ip-payment">
                 <div className="title">
                   <div className="text-lg fw-medium mb_4">Pagamento</div>
-                  <p className="text-sm text-main">
-                    Todas as transações são seguras e criptografadas.
+                  <p className="text-sm text-main mb_8">
+                    O pagamento será realizado diretamente na entrega, de
+                    acordo com a forma combinada com nossa equipe.
+                  </p>
+                  <p className="text-dark-6 text-sm mb-0">
+                    Seus dados pessoais serão usados para processar seu pedido,
+                    suportar sua experiência ao longo deste site e para outros
+                    propósitos descritos em nossa{" "}
+                    <Link
+                      to={`/privacy-policy`}
+                      className="fw-medium text-decoration-underline link text-sm"
+                    >
+                      política de privacidade.
+                    </Link>
                   </p>
                 </div>
-                <fieldset className="mb_12">
-                  <label htmlFor="bank-transfer" className="check-payment">
-                    <input
-                      type="radio"
-                      id="bank-transfer"
-                      className="tf-check-rounded"
-                      name="payment-method"
-                      checked={paymentMethod === "bank_transfer"}
-                      onChange={() => setPaymentMethod("bank_transfer")}
-                    />
-                    <span className="text-payment text-sm">
-                      Transferência bancária direta
-                    </span>
-                  </label>
-                </fieldset>
-                <p className="mb_16 text-main">
-                  Faça seu pagamento diretamente na nossa conta bancária. Por favor, use
-                  seu ID de pedido como referência de pagamento. Seu pedido não será enviado até que os fundos tenham sido depositados em nossa conta.
-                </p>
-                <div className="payment-method-box" id="payment-method-box">
-                  <div className="payment-item mb_16">
-                    <label
-                      htmlFor="delivery"
-                      className="payment-header collapsed"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#delivery-payment"
-                      aria-controls="delivery-payment"
-                    >
-                      <input
-                        type="radio"
-                        name="payment-method"
-                        className="tf-check-rounded"
-                        id="delivery"
-                        checked={paymentMethod === "cash_delivery"}
-                        onChange={() => setPaymentMethod("cash_delivery")}
-                      />
-                      <span className="pay-title text-sm">
-                          Pagamento em dinheiro na entrega
-                      </span>
-                    </label>
-                    <div
-                      id="delivery-payment"
-                      className="collapse"
-                      data-bs-parent="#payment-method-box"
-                    />
-                  </div>
-                  <div className="payment-item mb_16">
-                    <label
-                      htmlFor="credit-card"
-                      className="payment-header"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#credit-card-payment"
-                      aria-controls="credit-card-payment"
-                    >
-                      <input
-                        type="radio"
-                        name="payment-method"
-                        className="tf-check-rounded"
-                        id="credit-card"
-                        checked={paymentMethod === "credit_card"}
-                        onChange={() => setPaymentMethod("credit_card")}
-                      />
-                      <span className="pay-title text-sm">Cartão de crédito</span>
-                    </label>
-                    <div
-                      id="credit-card-payment"
-                      className="collapse show"
-                      data-bs-parent="#payment-method-box"
-                    >
-                      <div className="payment-body">
-                        <fieldset className="ip-card mb_16">
-                          <input
-                            type="text"
-                            className="style-2"
-                            placeholder="Número do cartão"
-                          />
-                          <img
-                            className="card-logo"
-                            width={41}
-                            height={12}
-                            alt="card"
-                            src="/images/payment/visa-2.png"
-                          />
-                        </fieldset>
-                        <div className="grid-2 mb_16">
-                          <input
-                            type="text"
-                            className="style-2"
-                            placeholder="Data de vencimento (MM/YY)"
-                          />
-                          <input
-                            type="text"
-                            className="style-2"
-                            placeholder="Código de segurança"
-                          />
-                        </div>
-                        <fieldset className="mb_16">
-                          <input
-                            type="text"
-                            className="style-2"
-                            placeholder="Nome no cartão"
-                          />
-                        </fieldset>
-                        <div className="cb-ship">
-                          <input
-                            type="checkbox"
-                            defaultChecked=""
-                            className="tf-check"
-                            id="checkShip"
-                          />
-                          <label
-                            htmlFor="checkShip"
-                            className="text-sm text-main"
-                          >
-                            Usar endereço de entrega como endereço de cobrança
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {/* <div className="payment-item paypal-payment mb_16">
-                    <label
-                      htmlFor="paypal"
-                      className="payment-header collapsed"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#paypal-payment"
-                      aria-controls="paypal-payment"
-                    >
-                      <input
-                        type="radio"
-                        name="payment-method"
-                        className="tf-check-rounded"
-                        id="paypal"
-                      />
-                      <span className="pay-title text-sm">
-                        PayPal
-                        <img
-                          className="card-logo"
-                          width={78}
-                          height={20}
-                          alt="apple"
-                          src="/images/payment/paypal-2.png"
-                        />
-                      </span>
-                    </label>
-                    <div
-                      id="paypal-payment"
-                      className="collapse"
-                      data-bs-parent="#payment-method-box"
-                    />
-                  </div> */}
-                </div>
-                <p className="text-dark-6 text-sm">
-                  Seus dados pessoais serão usados para processar seu pedido, suportar
-                  sua experiência ao longo deste site, e para outros
-                  propósitos descritos em nossa
-                  <Link
-                    to={`/privacy-policy`}
-                    className="fw-medium text-decoration-underline link text-sm"
-                  >
-                    política de privacidade.
-                  </Link>
-                </p>
               </div>
             </div>
           </div>

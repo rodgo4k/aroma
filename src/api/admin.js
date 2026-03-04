@@ -55,3 +55,22 @@ export async function makeUserAdmin(id) {
   if (!id) throw new Error("ID do usuário é obrigatório");
   return fetchWithAuthJson(`/api/admin/users/${id}/make-admin`, { method: "POST" });
 }
+
+export async function getAdminOrders(params = {}) {
+  const search = new URLSearchParams();
+  if (params.status && params.status !== "all") {
+    search.set("status", params.status);
+  }
+  const qs = search.toString();
+  const path = `/api/admin/orders${qs ? `?${qs}` : ""}`;
+  return fetchWithAuth(path);
+}
+
+export async function updateOrderStatus(id, status) {
+  if (!id) throw new Error("ID do pedido é obrigatório");
+  if (!status) throw new Error("Status é obrigatório");
+  return fetchWithAuthJson(`/api/admin/orders/${id}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}

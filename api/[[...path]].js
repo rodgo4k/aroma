@@ -5,6 +5,7 @@ import { handleMe } from "../lib/api/me.js";
 import { handleUploadAvatar } from "../lib/api/uploadAvatar.js";
 import { handlePerfumes } from "../lib/api/perfumes.js";
 import { handleAdminUsers } from "../lib/api/adminUsers.js";
+import { handleAdminOrders } from "../lib/api/adminOrders.js";
 
 export default async function handler(req, res) {
   // 1) Primeiro tenta usar req.query.path (padrão Vercel/Next para [[...path]])
@@ -39,11 +40,16 @@ export default async function handler(req, res) {
         return await handleUploadAvatar(req, res);
       case "perfumes":
         return await handlePerfumes(rest, req, res);
-      case "admin":
-        if (rest[0] === "users") {
-          return await handleAdminUsers(rest.slice(1), req, res);
+      case "admin": {
+        const [section, ...adminRest] = rest;
+        if (section === "users") {
+          return await handleAdminUsers(adminRest, req, res);
+        }
+        if (section === "orders") {
+          return await handleAdminOrders(adminRest, req, res);
         }
         break;
+      }
       default:
         break;
     }
