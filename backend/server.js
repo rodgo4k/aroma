@@ -749,12 +749,23 @@ app.get("/api/admin/orders/:id", async (req, res) => {
     `;
     if (!order) return res.status(404).json({ error: "Pedido não encontrado" });
 
-    const items = await sql`
-      SELECT id, order_id, perfume_id, title, quantity, unit_price, total_price
-      FROM order_items
-      WHERE order_id = ${id}
-      ORDER BY title
-    `;
+    let items;
+    try {
+      items = await sql`
+        SELECT id, order_id, perfume_id, title, quantity, unit_price, total_price
+        FROM order_items
+        WHERE order_id = ${id}
+        ORDER BY title
+      `;
+    } catch (itemsErr) {
+      if (itemsErr?.code !== "42703") throw itemsErr;
+      items = await sql`
+        SELECT id, order_id, perfume_id, title, quantity
+        FROM order_items
+        WHERE order_id = ${id}
+        ORDER BY title
+      `;
+    }
 
     return res.status(200).json({
       order: {
@@ -1583,12 +1594,23 @@ app.get("/api/my-orders/:id", async (req, res) => {
       return res.status(404).json({ error: "Pedido não encontrado" });
     }
 
-    const items = await sql`
-      SELECT id, order_id, perfume_id, title, quantity, unit_price, total_price
-      FROM order_items
-      WHERE order_id = ${id}
-      ORDER BY title
-    `;
+    let items;
+    try {
+      items = await sql`
+        SELECT id, order_id, perfume_id, title, quantity, unit_price, total_price
+        FROM order_items
+        WHERE order_id = ${id}
+        ORDER BY title
+      `;
+    } catch (itemsErr) {
+      if (itemsErr?.code !== "42703") throw itemsErr;
+      items = await sql`
+        SELECT id, order_id, perfume_id, title, quantity
+        FROM order_items
+        WHERE order_id = ${id}
+        ORDER BY title
+      `;
+    }
 
     return res.status(200).json({
       order: {
