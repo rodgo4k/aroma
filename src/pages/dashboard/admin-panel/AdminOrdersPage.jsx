@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { getAdminOrders, updateOrderStatus } from "@/api/admin";
 
 const STATUS_OPTIONS = [
@@ -184,22 +185,30 @@ export default function AdminOrdersPage() {
                     {formatDate(o.created_at)}
                   </td>
                   <td className="text-end">
-                    <select
-                      className="form-select form-select-sm d-inline-block w-auto"
-                      value={o.status || "pending"}
-                      disabled={updatingId === o.id}
-                      onChange={(e) =>
-                        handleChangeStatus(o, e.target.value)
-                      }
-                    >
-                      {STATUS_OPTIONS.filter(
-                        (opt) => opt.value !== "all",
-                      ).map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="d-flex justify-content-end gap-2">
+                      <Link
+                        to={`/painel/pedidos/${o.id}`}
+                        className="btn btn-sm btn-outline-secondary"
+                      >
+                        Ver detalhes
+                      </Link>
+                      <select
+                        className="form-select form-select-sm d-inline-block w-auto"
+                        value={o.status || "pending"}
+                        disabled={updatingId === o.id}
+                        onChange={(e) =>
+                          handleChangeStatus(o, e.target.value)
+                        }
+                      >
+                        {STATUS_OPTIONS.filter(
+                          (opt) => opt.value !== "all",
+                        ).map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </td>
                 </tr>
               ))}

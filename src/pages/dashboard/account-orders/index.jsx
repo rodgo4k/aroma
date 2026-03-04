@@ -7,17 +7,19 @@ import React from "react";
 
 import MetaComponent from "@/components/common/MetaComponent";
 import Breadcumb from "@/components/common/Breadcumb";
+
 const metadata = {
-  title: "Account Orders || Vineta - Multipurpose Reactjs eCommerce Template",
-  description: "Vineta - Multipurpose Reactjs eCommerce Template",
+  title: "Meus pedidos || Aroma Expresso",
+  description: "Veja o histórico dos seus pedidos na Aroma Expresso.",
 };
+
 export default function AccountOrderPage() {
   return (
     <>
       <MetaComponent meta={metadata} />
       <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
       <Header1 />
-      <Breadcumb pageName="Orders" pageTitle="My Orders" />
+      <Breadcumb pageName="Pedidos" pageTitle="Meus pedidos" />
       <Orders />
       <Footer1 />
       <OrderDetails />
