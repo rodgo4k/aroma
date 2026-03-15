@@ -136,12 +136,6 @@ export default function PerfumeDetailInfo({
       </div>
 
       <ul className="tf-product-cate-sku text-md">
-        {perfume?.id && (
-          <li className="item-cate-sku">
-            <span className="label">ID:</span>
-            <span className="value">{perfume.id}</span>
-          </li>
-        )}
         <li className="item-cate-sku">
           <span className="label">Categoria:</span>
           <span className="value">{displayData.catalogLabel || "Perfume"}</span>
