@@ -42,12 +42,6 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                <div className="marquee-child-item">
-                  <p>Dezembro com frete grátis</p>
-                </div>
-                <div className="marquee-child-item">
-                  <span className="dot" />
-                </div>
                 {/* 2 */}
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
@@ -57,12 +51,6 @@ export default function Topbar1() {
                 </div>
                 <div className="marquee-child-item">
                   <p>Produtos originais</p>
-                </div>
-                <div className="marquee-child-item">
-                  <span className="dot" />
-                </div>
-                <div className="marquee-child-item">
-                  <p>Dezembro com frete grátis</p>
                 </div>
                 <div className="marquee-child-item">
                   <span className="dot" />
@@ -80,12 +68,6 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                <div className="marquee-child-item">
-                  <p>Dezembro com frete grátis</p>
-                </div>
-                <div className="marquee-child-item">
-                  <span className="dot" />
-                </div>
                 {/* 4 */}
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
@@ -99,12 +81,6 @@ export default function Topbar1() {
                 <div className="marquee-child-item">
                   <span className="dot" />
                 </div>
-                <div className="marquee-child-item">
-                  <p>Dezembro com frete grátis</p>
-                </div>
-                <div className="marquee-child-item">
-                  <span className="dot" />
-                </div>
                 {/* 5 */}
                 <div className="marquee-child-item">
                   <p>Pague apenas ao receber</p>
@@ -114,12 +90,6 @@ export default function Topbar1() {
                 </div>
                 <div className="marquee-child-item">
                   <p>Produtos originais</p>
-                </div>
-                <div className="marquee-child-item">
-                  <span className="dot" />
-                </div>
-                <div className="marquee-child-item">
-                  <p>Dezembro com frete grátis</p>
                 </div>
                 <div className="marquee-child-item">
                   <span className="dot" />
