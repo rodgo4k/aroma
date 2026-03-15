@@ -7,8 +7,8 @@ import { Link } from "react-router-dom";
 import MetaComponent from "@/components/common/MetaComponent";
 import Breadcumb from "@/components/common/Breadcumb";
 const metadata = {
-  title: "Faq || Vineta - Multipurpose Reactjs eCommerce Template",
-  description: "Vineta - Multipurpose Reactjs eCommerce Template",
+  title: "Perguntas Frequentes || Aroma Express",
+  description: "Perguntas frequentes do Aroma Express - Envio, pagamento, devolução e troca.",
 };
 export default function FaqPage() {
   return (
@@ -16,7 +16,7 @@ export default function FaqPage() {
       <MetaComponent meta={metadata} />
       <Topbar />
       <Header1 />
-      <Breadcumb pageName="FAQs" pageTitle="Frequently Asked Questions" />
+      <Breadcumb pageName="Perguntas Frequentes" pageTitle="Perguntas Frequentes" />
 
       <Faqs />
       <Footer1 />

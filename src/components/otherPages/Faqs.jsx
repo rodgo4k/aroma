@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Link } from "react-router-dom";
 export default function Faqs() {
   return (
@@ -7,33 +7,31 @@ export default function Faqs() {
         <div className="row">
           <div className="col-lg-4">
             <div className="sb-contact">
-              <p className="title">Contact Us</p>
+              <p className="title">Fale Conosco</p>
               <p className="sub">
-                If you have an issue or question that requires immediate
-                assistance, you can click the button below to chat live with a
-                Customer Service representative.
+                Se você tiver uma dúvida ou problema que precise de atendimento
+                imediato, clique no botão abaixo para falar ao vivo com um
+                representante de atendimento ao cliente.
               </p>
               <p className="sub">
-                Please allow 06 - 12 business days from the time your package
-                arrives back to us for a refund to be issued.
+                Aguarde de 6 a 12 dias úteis a partir do recebimento do pacote
+                em nosso centro de distribuição para que o reembolso seja
+                processado.
               </p>
               <div className="btn-group">
                 <Link
                   to={`/contact-us`}
                   className="tf-btn btn-fill hover-primary"
                 >
-                  Contact us
+                  Fale conosco
                 </Link>
-                <a href="#" className="tf-btn btn-white hover-primary">
-                  Chat with us
-                </a>
               </div>
             </div>
           </div>
           <div className="col-lg-8">
             <ul className="faq-list">
               <li className="faq-item">
-                <p className="name-faq">Shopping Information</p>
+                <p className="name-faq">Informações de Compra</p>
                 <div className="faq-wrap" id="accordionShoping">
                   <div className="widget-accordion">
                     <div
@@ -44,7 +42,7 @@ export default function Faqs() {
                       aria-controls="collapseOne"
                       role="button"
                     >
-                      <span>How long will it take for my order to ship?</span>
+                      <span>Quanto tempo leva para o meu pedido ser enviado?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -55,9 +53,10 @@ export default function Faqs() {
                     >
                       <div className="accordion-body widget-desc">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          O prazo de envio é de até 2 dias úteis após a
+                          confirmação do pagamento. Você receberá um e-mail com
+                          o código de rastreamento assim que o pedido for
+                          despachado.
                         </p>
                       </div>
                     </div>
@@ -71,7 +70,7 @@ export default function Faqs() {
                       aria-controls="collapseTwo"
                       role="button"
                     >
-                      <span>Do you offer free shipping?</span>
+                      <span>Vocês oferecem frete grátis?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -82,9 +81,10 @@ export default function Faqs() {
                     >
                       <div className="accordion-body widget-material">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          Sim. Para pedidos acima do valor mínimo (consulte a
+                          página do produto), o frete é grátis para várias
+                          regiões do Brasil. As condições são exibidas no
+                          carrinho antes de finalizar a compra.
                         </p>
                       </div>
                     </div>
@@ -99,7 +99,7 @@ export default function Faqs() {
                       role="button"
                     >
                       <span>
-                        Can I change my shipping address after placing an order?
+                        Posso alterar o endereço de entrega após fazer o pedido?
                       </span>
                       <span className="icon icon-arrow-down" />
                     </div>
@@ -111,9 +111,10 @@ export default function Faqs() {
                     >
                       <div className="accordion-body">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          Entre em contato conosco o mais rápido possível. Se o
+                          pedido ainda não tiver sido enviado, podemos alterar o
+                          endereço de entrega. Após o envio, não é possível
+                          modificar o endereço.
                         </p>
                       </div>
                     </div>
@@ -127,7 +128,7 @@ export default function Faqs() {
                       aria-controls="collapseFour"
                       role="button"
                     >
-                      <span>What if my package is delayed or lost?</span>
+                      <span>E se meu pacote atrasar ou for extraviado?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -138,9 +139,11 @@ export default function Faqs() {
                     >
                       <div className="accordion-body">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          Entre em contato com nosso atendimento informando o
+                          número do pedido. Acompanhamos a entrega e ajudamos a
+                          resolver com os Correios ou transportadora. Em caso
+                          de extravio comprovado, reenviamos o pedido ou
+                          reembolsamos o valor.
                         </p>
                       </div>
                     </div>
@@ -148,7 +151,7 @@ export default function Faqs() {
                 </div>
               </li>
               <li className="faq-item">
-                <p className="name-faq">Payment Information</p>
+                <p className="name-faq">Informações de Pagamento</p>
                 <div className="faq-wrap" id="accordionPayment">
                   <div className="widget-accordion">
                     <div
@@ -159,7 +162,7 @@ export default function Faqs() {
                       aria-controls="collapsePaymentOne"
                       role="button"
                     >
-                      <span>How long will it take for my order to ship?</span>
+                      <span>Quais formas de pagamento são aceitas?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -170,9 +173,9 @@ export default function Faqs() {
                     >
                       <div className="accordion-body widget-desc">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          Aceitamos cartão de crédito, cartão de débito, PIX e
+                          boleto bancário. Todas as transações são processadas
+                          em ambiente seguro.
                         </p>
                       </div>
                     </div>
@@ -186,7 +189,7 @@ export default function Faqs() {
                       aria-controls="collapsePaymentTwo"
                       role="button"
                     >
-                      <span>Do you offer free shipping?</span>
+                      <span>É seguro informar meus dados de pagamento?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -197,9 +200,8 @@ export default function Faqs() {
                     >
                       <div className="accordion-body widget-material">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          Não solicitamos dados de pagamento no site. 
+                          O pagamento do seu pedido é feito no ato da entrega.
                         </p>
                       </div>
                     </div>
@@ -213,9 +215,7 @@ export default function Faqs() {
                       aria-controls="collapsePaymentThree"
                       role="button"
                     >
-                      <span>
-                        Can I change my shipping address after placing an order?
-                      </span>
+                      <span>Posso parcelar minha compra?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -226,36 +226,9 @@ export default function Faqs() {
                     >
                       <div className="accordion-body">
                         <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="widget-accordion">
-                    <div
-                      className="accordion-title collapsed"
-                      data-bs-toggle="collapse"
-                      data-bs-target="#collapsePaymentFour"
-                      aria-expanded="false"
-                      aria-controls="collapsePaymentFour"
-                      role="button"
-                    >
-                      <span>What if my package is delayed or lost?</span>
-                      <span className="icon icon-arrow-down" />
-                    </div>
-                    <div
-                      id="collapsePaymentFour"
-                      className="accordion-collapse collapse"
-                      aria-labelledby="headingFour"
-                      data-bs-parent="#accordionPayment"
-                    >
-                      <div className="accordion-body">
-                        <p>
-                          If you have an issue or question that requires
-                          immediate assistance, you can click the button below
-                          to chat live with a Customer Service representative.
+                          Sim. No cartão de crédito é possível parcelar em até
+                          12x, conforme disponibilidade do seu cartão. Condições
+                          sem juros são exibidas no checkout.
                         </p>
                       </div>
                     </div>
@@ -263,7 +236,7 @@ export default function Faqs() {
                 </div>
               </li>
               <li className="faq-item">
-                <p className="name-faq">Return &amp; Exchange</p>
+                <p className="name-faq">Devolução e Troca</p>
                 <div className="faq-wrap" id="accordionExchange">
                   <div className="widget-accordion">
                     <div
@@ -274,7 +247,7 @@ export default function Faqs() {
                       aria-controls="collapseExchangeOne"
                       role="button"
                     >
-                      <span>What is your return policy?</span>
+                      <span>Qual é a política de devolução?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -285,9 +258,9 @@ export default function Faqs() {
                     >
                       <div className="accordion-body widget-desc">
                         <p>
-                          We accept returns within 14 days of delivery. Items
-                          must be unworn, unwashed, and in their original
-                          condition.
+                          Aceitamos devoluções em até 14 dias após o
+                          recebimento. Os itens devem estar sem uso, sem
+                          lavagem e na embalagem original.
                         </p>
                       </div>
                     </div>
@@ -301,7 +274,7 @@ export default function Faqs() {
                       aria-controls="collapseExchangeTwo"
                       role="button"
                     >
-                      <span>How do I return an item?</span>
+                      <span>Como devolvo um item?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -312,10 +285,9 @@ export default function Faqs() {
                     >
                       <div className="accordion-body widget-material">
                         <p>
-                          Simply contact our customer service team for a return
-                          authorization, and we’ll provide instructions for
-                          shipping the item back.
-                        </p>
+                          Entre em contato com nosso atendimento para obter a
+                          autorização de devolução. Enviaremos as instruções e
+                          o procedimento para o envio do produto de volta.</p>
                       </div>
                     </div>
                   </div>
@@ -328,7 +300,7 @@ export default function Faqs() {
                       aria-controls="collapseExchangeThree"
                       role="button"
                     >
-                      <span>Are there any items that cannot be returned?</span>
+                      <span>Há itens que não podem ser devolvidos?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -339,8 +311,9 @@ export default function Faqs() {
                     >
                       <div className="accordion-body">
                         <p>
-                          Yes, sale items, personalized products, and
-                          undergarments are non-returnable.
+                          Sim. Produtos em promoção relâmpago, itens
+                          personalizados e itens específicos, 
+                          exceto em caso de defeito.
                         </p>
                       </div>
                     </div>
@@ -354,7 +327,7 @@ export default function Faqs() {
                       aria-controls="collapseExchangeFour"
                       role="button"
                     >
-                      <span>When will I receive my refund?</span>
+                      <span>Quando receberei meu reembolso?</span>
                       <span className="icon icon-arrow-down" />
                     </div>
                     <div
@@ -365,8 +338,9 @@ export default function Faqs() {
                     >
                       <div className="accordion-body">
                         <p>
-                          Once your return is received and inspected, we will
-                          process the refund within 5-7 business days.
+                          Após o recebimento e a análise do produto devolvido,
+                          processamos o reembolso em 5 a 7 dias úteis. O valor
+                          será creditado na mesma forma de pagamento utilizada.
                         </p>
                       </div>
                     </div>
