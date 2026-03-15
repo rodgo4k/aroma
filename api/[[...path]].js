@@ -9,16 +9,17 @@ import { handleAdminOrders } from "../lib/api/adminOrders.js";
 import { handleMyOrders } from "../lib/api/myOrders.js";
 
 export default async function handler(req, res) {
-  // 1) Primeiro tenta usar req.query.path (padrão Vercel/Next para [[...path]])
+  // 1) Tenta req.query.path (padrão Vercel para [[...path]])
   let segments = [];
   const qp = req.query && req.query.path;
   if (Array.isArray(qp)) {
     segments = qp;
   } else if (typeof qp === "string" && qp.length) {
     segments = qp.split("/").filter(Boolean);
-  } else {
-    // 2) Fallback: extrai o caminho de req.url depois de /api
-    const rawUrl = req.url || "";
+  }
+  // 2) Fallback: extrai de req.url (garante funcionar em produção na Vercel)
+  if (segments.length === 0) {
+    const rawUrl = req.url || req.originalUrl || "";
     const pathOnly = rawUrl.split("?")[0] || "";
     let path = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
     if (path.startsWith("/")) path = path.slice(1);

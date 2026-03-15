@@ -195,3 +195,30 @@ VITE_API_URL=http://localhost:3001
 ## Variável opcional: OAUTH_CALLBACK_BASE
 
 Só é necessária se a URL base da API não for detectada automaticamente (ex.: atrás de um proxy). Nesse caso, defina a URL pública do backend, sem barra no final (ex.: `https://seu-projeto.vercel.app`). Na maioria dos casos **não é preciso** definir.
+
+---
+
+## Troubleshooting: "Perfume não encontrado" em produção (Vercel)
+
+Se na Vercel ao clicar em um perfume aparece **"Perfume não encontrado"** e localmente funciona, quase sempre é um dos dois casos:
+
+### 1. **DATABASE_URL na Vercel aponta para outro banco (ou vazio)**
+
+Na Vercel, a API de perfumes usa a variável **DATABASE_URL** do projeto. Se ela não estiver definida ou apontar para um banco diferente do que você usa em desenvolvimento, os perfumes que existem no seu Neon local **não existem** nesse banco de produção.
+
+**O que fazer:**
+
+1. No [dashboard da Vercel](https://vercel.com) → seu projeto → **Settings** → **Environment Variables**.
+2. Confirme que existe **DATABASE_URL** para o ambiente **Production** (e Preview, se quiser).
+3. Use **o mesmo** connection string do Neon que você usa no `.env` local (o mesmo projeto/branch do Neon), para que produção tenha os mesmos dados.
+4. Depois de alterar variáveis, faça um **Redeploy** do projeto (Deployments → ⋮ no último deploy → Redeploy).
+
+### 2. **Banco de produção sem tabelas/dados**
+
+Se a **DATABASE_URL** já é a correta mas o banco de produção foi criado depois ou está vazio:
+
+1. No [Neon](https://neon.tech), abra o projeto que você usa em produção.
+2. No **SQL Editor**, execute o schema e as migrations (por exemplo o conteúdo de `backend/schema.sql` e dos arquivos em `backend/migrations/`) para criar/atualizar as tabelas `perfumes`, `perfume_images`, etc.
+3. Se os perfumes forem cadastrados só no ambiente local, será preciso inseri-los também no banco de produção (ou usar o mesmo banco em dev e prod, como no item 1).
+
+**Resumo:** em produção, a API precisa de **DATABASE_URL** apontando para um PostgreSQL (Neon) onde as tabelas de perfumes existem e onde os perfumes estão cadastrados.
