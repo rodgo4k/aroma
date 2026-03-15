@@ -11,15 +11,21 @@ import { handleMyOrders } from "../lib/api/myOrders.js";
 function getPathSegments(req) {
   let segments = [];
   const query = req.query || {};
-  // Vercel pode passar como path (array ou string) ou como slug
   const qp = query.path ?? query.slug;
   if (Array.isArray(qp)) {
     segments = qp.map((s) => (typeof s === "string" ? s : String(s)).trim()).filter(Boolean);
   } else if (typeof qp === "string" && qp.length) {
     segments = qp.split("/").map((s) => s.trim()).filter(Boolean);
   }
-  if (segments.length > 0) return segments;
-  // Fallback: extrair do pathname da URL
+  if (segments.length > 0) {
+    return segments.map((s) => {
+      try {
+        return decodeURIComponent(s);
+      } catch (_) {
+        return s;
+      }
+    });
+  }
   let rawUrl = req.url || req.originalUrl || "";
   try {
     if (rawUrl.startsWith("http")) {
@@ -31,7 +37,13 @@ function getPathSegments(req) {
   const withoutApi = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
   const path = withoutApi.startsWith("/") ? withoutApi.slice(1) : withoutApi;
   segments = path ? path.split("/").filter(Boolean) : [];
-  return segments;
+  return segments.map((s) => {
+    try {
+      return decodeURIComponent(s);
+    } catch (_) {
+      return s;
+    }
+  });
 }
 
 export default async function handler(req, res) {
