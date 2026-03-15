@@ -1,6 +1,6 @@
 import Footer2 from "@/components/footers/Footer2";
 import Header6 from "@/components/headers/Header6";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-phonecase/Banner";
 import Banner2 from "@/components/homes/home-phonecase/Banner2";
 import Categories from "@/components/homes/home-phonecase/Categories";
@@ -23,7 +23,7 @@ export default function HomePagePhoneCase() {
     <>
       <MetaComponent meta={metadata} />
       <div className="bg-surface-2 home-phonecase">
-        <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
+        <Topbar />
         <Header6 />
 
         <Hero />

@@ -1,7 +1,7 @@
 import Brands from "@/components/common/Brands";
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 
 import Banner from "@/components/homes/home-fashion-women/Banner";
 import Collections from "@/components/homes/home-fashion-women/Collections";
@@ -22,7 +22,7 @@ export default function HomePageFashionWoman() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-light-pink-2 topbar-bg" />
+      <Topbar />
       <Header1 parentClass="header-default header-absolute" />
       <Hero />
       <Collections />

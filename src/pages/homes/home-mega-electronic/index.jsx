@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header10 from "@/components/headers/Header10";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-mega-electronic/Banner";
 import Blogs from "@/components/homes/home-mega-electronic/Blogs";
 import Collections from "@/components/homes/home-mega-electronic/Collections";
@@ -20,7 +20,7 @@ export default function HomePageMegaElectric() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar" />
+      <Topbar />
       <Header10 />
       <Collections />
       <Products />

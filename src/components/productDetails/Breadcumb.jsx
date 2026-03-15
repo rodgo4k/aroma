@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-export default function Breadcumb({ product }) {
+export default function Breadcumb({ product, backLink = "/shop-default" }) {
   return (
     <>
       <div className="breadcrumb-sec">
@@ -22,7 +22,7 @@ export default function Breadcumb({ product }) {
               <a href="#" className="breadcrumb-prev">
                 <i className="icon icon-arr-left" />
               </a>
-              <Link to={`/shop-default`} className="breadcrumb-back">
+              <Link to={backLink} className="breadcrumb-back">
                 <i className="icon icon-shop" />
               </Link>
               <a href="#" className="breadcrumb-next">

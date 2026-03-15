@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header2 from "@/components/headers/Header2";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 
 import Banner from "@/components/homes/home-fashion-02/Banner";
 import Banner2 from "@/components/homes/home-fashion-02/Banner2";
@@ -23,7 +23,7 @@ export default function HomePageFashion2() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 />
+      <Topbar />
       <Header2 />
       <Hero />
       <Products />
