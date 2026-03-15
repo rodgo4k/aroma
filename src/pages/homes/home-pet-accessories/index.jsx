@@ -1,7 +1,7 @@
 import Brands from "@/components/common/Brands";
 import Footer1 from "@/components/footers/Footer1";
 import Header7 from "@/components/headers/Header7";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-pet-accessories/Banner";
 import Banner2 from "@/components/homes/home-pet-accessories/Banner2";
 import Blogs from "@/components/homes/home-pet-accessories/Blogs";
@@ -24,7 +24,7 @@ export default function HomePagePetAccessories() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-light-blue topbar-bg" />
+      <Topbar />
       <Header7 />
       <Hero />
       <Collections />

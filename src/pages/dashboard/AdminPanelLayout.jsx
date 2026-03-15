@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import React, { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useContextElement } from "@/context/Context";
@@ -34,7 +34,7 @@ export default function AdminPanelLayout() {
     return (
       <>
         <MetaComponent meta={metadata} />
-        <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
+        <Topbar />
         <Header1 />
         <section className="tf-section">
           <div className="container">
@@ -54,7 +54,7 @@ export default function AdminPanelLayout() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
+      <Topbar />
       <Header1 />
       <Breadcumb pageName="Painel" pageTitle="Painel de Controle" />
       <div className="flat-spacing-13">

@@ -14,6 +14,18 @@ import CurrencySelect from "../common/CurrencySelect";
 import { useContextElement } from "@/context/Context";
 import { adminLinks } from "@/components/dashboard/AdminSidebar";
 
+const MOBILE_MENU_ID = "mobileMenu";
+
+function closeMobileMenu() {
+  import("bootstrap").then((bootstrap) => {
+    const el = document.getElementById(MOBILE_MENU_ID);
+    if (el) {
+      const instance = bootstrap.Offcanvas.getInstance(el);
+      if (instance) instance.hide();
+    }
+  });
+}
+
 export default function MobileMenu() {
   const { pathname } = useLocation();
   const { user } = useContextElement();
@@ -28,6 +40,11 @@ export default function MobileMenu() {
   const isMenuParentActive2 = (menu) => {
     return menu.some((elm) => isMenuParentActive(elm.links));
   };
+
+  const handleNavClick = (e) => {
+    closeMobileMenu();
+  };
+
   return (
     <div className="offcanvas offcanvas-start canvas-mb" id="mobileMenu">
       <button
@@ -60,7 +77,7 @@ export default function MobileMenu() {
                   className={`mb-menu-link ${
                     pathname === "/" ? "menuActive" : ""
                   }`}
-                  data-bs-dismiss="offcanvas"
+                  onClick={handleNavClick}
                 >
                   <span>Início</span>
                 </Link>
@@ -87,7 +104,7 @@ export default function MobileMenu() {
                   className={`mb-menu-link ${
                     pathname === "/catalogo" ? "menuActive" : ""
                   }`}
-                  data-bs-dismiss="offcanvas"
+                  onClick={handleNavClick}
                 >
                   <span>Catálogo</span>
                 </Link>
@@ -184,7 +201,7 @@ export default function MobileMenu() {
                   className={`mb-menu-link ${
                     pathname === "/about-us" ? "menuActive" : ""
                   }`}
-                  data-bs-dismiss="offcanvas"
+                  onClick={handleNavClick}
                 >
                   <span>Sobre Nós</span>
                 </Link>
@@ -211,7 +228,7 @@ export default function MobileMenu() {
                   className={`mb-menu-link ${
                     pathname === "/contact-us" ? "menuActive" : ""
                   }`}
-                  data-bs-dismiss="offcanvas"
+                  onClick={handleNavClick}
                 >
                   <span>Contato</span>
                 </Link>
@@ -277,7 +294,7 @@ export default function MobileMenu() {
                                 ? "menuActive"
                                 : ""
                             }`}
-                            data-bs-dismiss="offcanvas"
+                            onClick={handleNavClick}
                           >
                             {label}
                           </Link>
@@ -291,7 +308,7 @@ export default function MobileMenu() {
           </div>
           <div className="mb-other-content">
             <div className="group-icon">
-              <Link to={`/wish-list`} className="site-nav-icon">
+              <Link to="/wish-list" className="site-nav-icon" onClick={handleNavClick}>
                 <i className="icon icon-heart" />
                 Favoritos
               </Link>

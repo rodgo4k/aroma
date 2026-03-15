@@ -1,7 +1,7 @@
 import Footer3 from "@/components/footers/Footer3";
 import Header12 from "@/components/headers/Header12";
 
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-plant/Banner";
 import Banner2 from "@/components/homes/home-plant/Banner2";
 import Blogs from "@/components/homes/home-plant/Blogs";
@@ -23,7 +23,7 @@ export default function HomePagePlant() {
     <>
       <MetaComponent meta={metadata} />
       <div className="bg-surface-3 primary-3">
-        <Topbar2 parentClass="tf-topbar bg-light-blue topbar-bg" />
+        <Topbar />
         <Header12 />
         <Hero />
         <Features />

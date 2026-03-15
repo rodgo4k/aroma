@@ -5,34 +5,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 export default function Features() {
   return (
     <>
-      <div className="flat-spacing pt-0">
-        <div className="container">
-          <p className="text text-md text-center">
-            Our women's collection brings you a unique blend of classic
-            sophistication and the latest fashion trends. Whether you're looking
-            for versatile daywear, stylish work attire, or statement pieces for
-            special occasions, this collection has it all. Each garment is
-            thoughtfully crafted with attention to detail, using high-quality
-            fabrics to ensure lasting comfort and a flawless fit. From chic
-            blouses and tailored pants to stunning dresses and outerwear, you'll
-            find pieces that seamlessly blend elegance with practicality. Our
-            collection is designed to empower women with confidence and style,
-            no matter the occasion.
-          </p>
-          <p className="mt_12 text-md text-center">
-            Looking for more? Don’t miss out on our other exciting collections
-            for{" "}
-            <span className="text-primary text-decoration-underline fw-medium">
-              BAGS
-            </span>{" "}
-            and{" "}
-            <span className="text-primary text-decoration-underline fw-medium">
-              ACCESSORIES
-            </span>
-            .
-          </p>
-        </div>
-      </div>
       <div className="flat-spacing-5 line-top flat-wrap-iconbox">
         <div className="container">
           <Swiper
@@ -69,9 +41,9 @@ export default function Features() {
                   />
                 </svg>
                 <div className="content">
-                  <div className="title">Free Shipping</div>
+                  <div className="title">Entrega Grátis</div>
                   <p className="desc text-grey-2">
-                    Enjoy free shipping on all orders over $150
+                    Aproveite a entrega grátis para compras acima de R$250,00
                   </p>
                 </div>
               </div>
@@ -91,9 +63,9 @@ export default function Features() {
                   />
                 </svg>
                 <div className="content">
-                  <div className="title">Easy Returns</div>
+                  <div className="title">Devoluções Facilitadas</div>
                   <p className="desc text-grey-2">
-                    Hassle-free returns for a worry-free shopping experience.
+                    Devoluções fáceis para uma experiência de compra sem preocupações.
                   </p>
                 </div>
               </div>
@@ -113,9 +85,9 @@ export default function Features() {
                   />
                 </svg>
                 <div className="content">
-                  <div className="title">24/7 Support</div>
+                  <div className="title">Suporte 24h</div>
                   <p className="desc text-grey-2">
-                    Shop with confidence, covered by our one-year warranty.
+                    Compre com confiança e facilidade na comunicação com nossa equipe.
                   </p>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header9 from "@/components/headers/Header9";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-electric-accessories/Banner";
 import Brands from "@/components/homes/home-electric-accessories/Brands";
 import Categories from "@/components/homes/home-electric-accessories/Categories";
@@ -23,7 +23,7 @@ export default function HomePageElectricAccessories() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar" />
+      <Topbar />
       <Header9 />
       <Hero />
       <Products />

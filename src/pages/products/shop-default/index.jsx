@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header1 from "@/components/headers/Header1";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Breadcumb from "@/components/products/Breadcumb";
 import Features from "@/components/products/Features";
 import Products1 from "@/components/products/Products1";
@@ -15,7 +15,7 @@ export default function ProductPageDefault() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-dark-5 topbar-bg" />
+      <Topbar />
       <Header1 />
       <Breadcumb />
 

@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header2 from "@/components/headers/Header2";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Features from "@/components/homes/home-1/Features";
 import Banner from "@/components/homes/home-jewelry/Banner";
 import Categories from "@/components/homes/home-jewelry/Categories";
@@ -21,7 +21,7 @@ export default function HomePageJewwlry() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-dark topbar-bg" />
+      <Topbar />
       <Header2 />
       <Hero />
       <Categories />
