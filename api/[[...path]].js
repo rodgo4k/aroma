@@ -8,24 +8,34 @@ import { handleAdminUsers } from "../lib/api/adminUsers.js";
 import { handleAdminOrders } from "../lib/api/adminOrders.js";
 import { handleMyOrders } from "../lib/api/myOrders.js";
 
-export default async function handler(req, res) {
-  // 1) Tenta req.query.path (padrão Vercel para [[...path]])
+function getPathSegments(req) {
   let segments = [];
-  const qp = req.query && req.query.path;
+  const query = req.query || {};
+  // Vercel pode passar como path (array ou string) ou como slug
+  const qp = query.path ?? query.slug;
   if (Array.isArray(qp)) {
-    segments = qp;
+    segments = qp.map((s) => (typeof s === "string" ? s : String(s)).trim()).filter(Boolean);
   } else if (typeof qp === "string" && qp.length) {
-    segments = qp.split("/").filter(Boolean);
+    segments = qp.split("/").map((s) => s.trim()).filter(Boolean);
   }
-  // 2) Fallback: extrai de req.url (garante funcionar em produção na Vercel)
-  if (segments.length === 0) {
-    const rawUrl = req.url || req.originalUrl || "";
-    const pathOnly = rawUrl.split("?")[0] || "";
-    let path = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
-    if (path.startsWith("/")) path = path.slice(1);
-    segments = path ? path.split("/").filter(Boolean) : [];
-  }
+  if (segments.length > 0) return segments;
+  // Fallback: extrair do pathname da URL
+  let rawUrl = req.url || req.originalUrl || "";
+  try {
+    if (rawUrl.startsWith("http")) {
+      const u = new URL(rawUrl);
+      rawUrl = u.pathname || rawUrl;
+    }
+  } catch (_) {}
+  const pathOnly = rawUrl.split("?")[0] || "";
+  const withoutApi = pathOnly.startsWith("/api") ? pathOnly.slice(4) : pathOnly;
+  const path = withoutApi.startsWith("/") ? withoutApi.slice(1) : withoutApi;
+  segments = path ? path.split("/").filter(Boolean) : [];
+  return segments;
+}
 
+export default async function handler(req, res) {
+  const segments = getPathSegments(req);
   const [first, ...rest] = segments;
 
   try {
