@@ -32,6 +32,7 @@ export default function PerfumeDetailInfo({
   const inWishlist = isAddedtoWishlist(perfume?.id);
   const inCart = isAddedToCartProducts(perfume?.id);
   const cartQty = inCart ? (cartProducts.find((p) => p.id === perfume?.id)?.quantity ?? 1) : quantity;
+  const indisponivel = perfume && (!perfume.ativo || perfume.esgotado);
 
   const handleAddToCart = () => {
     if (!perfume?.id) return;
@@ -57,7 +58,9 @@ export default function PerfumeDetailInfo({
           </div>
         </div>
         <div className="product-stock">
-          <span className="stock in-stock">Em estoque</span>
+          <span className={`stock ${indisponivel ? "out-of-stock text-danger" : "in-stock"}`}>
+            {indisponivel ? "Indisponível" : "Em estoque"}
+          </span>
         </div>
       </div>
 
@@ -81,29 +84,38 @@ export default function PerfumeDetailInfo({
 
       <div className="tf-product-total-quantity">
         <div className="group-btn">
-          <QuantitySelect
-            quantity={cartQty}
-            setQuantity={(qty) => {
-              if (inCart) updateQuantity(perfume.id, qty);
-              else setQuantity(qty);
-            }}
-          />
+          {!indisponivel && (
+            <QuantitySelect
+              quantity={cartQty}
+              setQuantity={(qty) => {
+                if (inCart) updateQuantity(perfume.id, qty);
+                else setQuantity(qty);
+              }}
+            />
+          )}
           <a
             href="#shoppingCart"
             data-bs-toggle="offcanvas"
             onClick={(e) => {
               e.preventDefault();
+              if (indisponivel) return;
               if (!cartLoading) handleAddToCart();
             }}
-            className={`tf-btn hover-primary btn-add-to-cart ${cartLoading ? "disabled" : ""}`}
-            aria-disabled={cartLoading}
+            className={`tf-btn hover-primary btn-add-to-cart ${cartLoading || indisponivel ? "disabled" : ""}`}
+            aria-disabled={cartLoading || indisponivel}
           >
-            {cartLoading ? "..." : inCart ? "No carrinho" : "Adicionar ao carrinho"}
+            {indisponivel ? "Indisponível" : cartLoading ? "..." : inCart ? "No carrinho" : "Adicionar ao carrinho"}
           </a>
         </div>
-        <Link to="/checkout" className="tf-btn btn-primary w-100 animate-btn">
-          Comprar agora
-        </Link>
+        {indisponivel ? (
+          <span className="tf-btn btn-primary w-100 animate-btn disabled" aria-disabled>
+            Comprar agora
+          </span>
+        ) : (
+          <Link to="/checkout" className="tf-btn btn-primary w-100 animate-btn">
+            Comprar agora
+          </Link>
+        )}
       </div>
 
       <div className="tf-product-extra-link">
