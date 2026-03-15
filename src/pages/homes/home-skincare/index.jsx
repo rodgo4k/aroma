@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header5 from "@/components/headers/Header5";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-skincare/Banner";
 import Banner2 from "@/components/homes/home-skincare/Banner2";
 import Categories from "@/components/homes/home-skincare/Categories";
@@ -23,7 +23,7 @@ export default function HomePageSkincare() {
     <>
       <MetaComponent meta={metadata} />
       <div className="font-2 bg-surface-5">
-        <Topbar2 parentClass="tf-topbar bg-light-purple-2 topbar-bg" />
+        <Topbar />
         <Header5 />
         <Hero />
         <Marquee />

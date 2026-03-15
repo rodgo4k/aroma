@@ -1,6 +1,6 @@
 import Footer1 from "@/components/footers/Footer1";
 import Header8 from "@/components/headers/Header8";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-sportwear/Banner";
 import Brands from "@/components/homes/home-sportwear/Brands";
 import Collections from "@/components/homes/home-sportwear/Collections";
@@ -22,7 +22,7 @@ export default function HomePageSportwear() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-light-purple topbar-bg" />
+      <Topbar />
       <Header8 />
       <Hero />
       <Features />

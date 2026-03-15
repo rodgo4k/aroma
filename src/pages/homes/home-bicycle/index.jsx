@@ -1,5 +1,5 @@
 import Header1 from "@/components/headers/Header1";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Brands from "@/components/common/Brands2";
 import Hero from "@/components/homes/home-bicycle/Hero";
 import React from "react";
@@ -21,7 +21,7 @@ export default function HomePageBicycle() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-green topbar-bg" />
+      <Topbar />
       <Header1 parentClass="header-default header-absolute" />
       <Hero />
       <Brands parentClass="flat-spacing-4" />

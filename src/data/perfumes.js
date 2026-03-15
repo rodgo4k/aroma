@@ -1,9 +1,16 @@
-﻿export const CATALOG_OPTIONS = [
+export const CATALOG_OPTIONS = [
   { value: "all", label: "Todos" },
   { value: "arabe", label: "Ãrabe" },
   { value: "feminino", label: "Feminino" },
   { value: "normal", label: "Masculino / Unissex" },
 ];
+
+/**
+ * TEMPORÁRIO: quando o blob está fora do limite, usar imagem local para visualização.
+ * Coloque em false quando o banco/blob voltar a funcionar.
+ */
+const USE_TEMPORARY_PERFUME_IMAGE = true;
+const TEMPORARY_PERFUME_IMAGE = "/images/perfume1.webp";
 
 export function getPerfumeDisplayData(item) {
   const variants = item.variants || [];
@@ -16,7 +23,10 @@ export function getPerfumeDisplayData(item) {
   const mainImage = item.images && item.images[0]
     ? (String(item.images[0]).startsWith("//") ? "https:" + item.images[0] : item.images[0])
     : "";
-  const imageUrl = mainImage || variantImage || "";
+  let imageUrl = mainImage || variantImage || "";
+  if (USE_TEMPORARY_PERFUME_IMAGE) {
+    imageUrl = TEMPORARY_PERFUME_IMAGE;
+  }
   const priceShort = firstVariant?.price_short || (priceMin != null ? `R$ ` + priceMin.toFixed(2).replace(".", ",") : "");
   const source = item.catalogSource || "normal";
   const labels = { arabe: "Ãrabe", feminino: "Feminino", normal: "Masculino / Unissex" };
@@ -45,5 +55,8 @@ export function getPerfumeAllImages(item) {
   };
   (item.images || []).forEach(add);
   (item.variants || []).forEach((v) => add(v?.image_url));
+  if (USE_TEMPORARY_PERFUME_IMAGE) {
+    return [TEMPORARY_PERFUME_IMAGE];
+  }
   return out;
 }

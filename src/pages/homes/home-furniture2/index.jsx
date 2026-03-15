@@ -1,7 +1,7 @@
 import MetaComponent from "@/components/common/MetaComponent";
 import Footer6 from "@/components/footers/Footer6";
 import Header5 from "@/components/headers/Header5";
-import Topbar2 from "@/components/headers/Topbar2";
+import Topbar from "@/components/headers/Topbar";
 import Banner from "@/components/homes/home-furniture2/Banner";
 import Categories from "@/components/homes/home-furniture2/Categories";
 import Collections from "@/components/homes/home-furniture2/Collections";
@@ -20,7 +20,7 @@ export default function HomePageFurniture2() {
   return (
     <>
       <MetaComponent meta={metadata} />
-      <Topbar2 parentClass="tf-topbar bg-green topbar-bg" />
+      <Topbar />
       <Header5 />
       <Hero />
       <Collections />
