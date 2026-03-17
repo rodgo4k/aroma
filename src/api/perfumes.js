@@ -71,10 +71,16 @@ export async function getPerfumeById(id) {
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${apiBase}/api/perfumes/${encodeURIComponent(id)}`, { headers: Object.keys(headers).length ? headers : undefined });
   const contentType = res.headers.get("content-type") || "";
-  const data = contentType.includes("application/json") ? await res.json().catch(() => null) : null;
+  const isJson = contentType.includes("application/json");
+  const data = isJson ? await res.json().catch(() => null) : null;
   if (!res.ok) {
-    if (res.status === 404) throw new Error("Perfume não encontrado.");
-    throw new Error(data?.error || "Erro ao carregar perfume.");
+    if (res.status === 404) {
+      const serverMsg = data?.error;
+      if (serverMsg) throw new Error(serverMsg);
+      const text = !isJson ? await res.text().catch(() => "") : "";
+      throw new Error(text ? `404 ao buscar perfume: ${text.slice(0, 180)}` : "Perfume não encontrado.");
+    }
+    throw new Error(data?.error || `Erro ao carregar perfume (HTTP ${res.status}).`);
   }
   return applyImageProxy(data);
 }
