@@ -173,13 +173,13 @@ export default function PerfumeDetailInfo({
         <div className="product-delivery">
           <div className="icon icon-car2" />
           <p className="text-md">
-            Prazo de entrega estimado: <span className="fw-medium">3 a 5 dias úteis</span>
+            Prazo de entrega estimado: <span className="fw-medium">3 a 7 dias úteis</span>
           </p>
         </div>
         <div className="product-delivery">
           <div className="icon icon-shipping3" />
           <p className="text-md">
-            Frete grátis em <span className="fw-medium">compras acima de R$ 150</span>
+            Frete grátis em <span className="fw-medium">compras acima de R$ 250</span>
           </p>
         </div>
       </div>
