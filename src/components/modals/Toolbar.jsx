@@ -35,7 +35,7 @@ export default function Toolbar() {
               />
             </svg>
           </div>
-          <div className="toolbar-label">Home</div>
+          <div className="toolbar-label">Início</div>
         </Link>
       </div>
       <div className="toolbar-item">
@@ -56,7 +56,7 @@ export default function Toolbar() {
               />
             </svg>
           </div>
-          <div className="toolbar-label">{user ? "Conta" : "Account"}</div>
+          <div className="toolbar-label">Conta</div>
         </a>
       </div>
       <div className="toolbar-item">
@@ -101,7 +101,7 @@ export default function Toolbar() {
               />
             </svg>
           </div>
-          <div className="toolbar-label">Shop</div>
+          <div className="toolbar-label">Loja</div>
         </Link>
       </div>
       <div className="toolbar-item">
@@ -128,7 +128,7 @@ export default function Toolbar() {
             </svg>
             <div className="toolbar-count">0</div>
           </div>
-          <div className="toolbar-label">Wishlist</div>
+          <div className="toolbar-label">Favoritos</div>
         </Link>
       </div>
       <div className="toolbar-item">
@@ -156,7 +156,7 @@ export default function Toolbar() {
             </svg>
             <div className="toolbar-count">0</div>
           </div>
-          <div className="toolbar-label">Cart</div>
+          <div className="toolbar-label">Carrinho</div>
         </a>
       </div>
     </div>

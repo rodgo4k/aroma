@@ -13,9 +13,14 @@ function getPathSegments(req) {
   const query = req.query || {};
   const qp = query.path ?? query.slug;
   if (Array.isArray(qp)) {
-    segments = qp.map((s) => (typeof s === "string" ? s : String(s)).trim()).filter(Boolean);
+    segments = qp
+      .map((s) => (typeof s === "string" ? s : String(s)).trim())
+      .filter(Boolean);
   } else if (typeof qp === "string" && qp.length) {
-    segments = qp.split("/").map((s) => s.trim()).filter(Boolean);
+    segments = qp
+      .split("/")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   if (segments.length > 0) {
     return segments.map((s) => {
